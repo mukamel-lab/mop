@@ -1,2 +1,0 @@
-# mop
-Multiomics Processing
