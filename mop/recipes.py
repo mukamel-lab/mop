@@ -9,7 +9,6 @@ Written by Wayne Doyle unless noted
 import loompy
 from . import recipes_helpers
 from . import smooth
-from . import imputation
 from . import cemba
 
 def process_10x(loom_file,
