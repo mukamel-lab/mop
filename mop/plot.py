@@ -565,8 +565,8 @@ def confusion_matrix(loom_file,
                      normalize_by=None,
                      diagonalize=True,
                      valid_attr=None,
-                     xlabel=None,
-                     ylabel=None,
+                     row_label=None,
+                     column_label=None,
                      title=None,
                      cmap='Reds',
                      cbar_label=None,
@@ -586,8 +586,8 @@ def confusion_matrix(loom_file,
             Columns can be indicated by columns or 1
         diagonalize (bool): Organize confusion matrix along diagonal
         valid_attr (str): Attribute specifying cells to include
-        xlabel (str): Optional, label for x axis
-        ylabel (str): Optional, label for y axis
+        row_label (str): Optional, label for x axis
+        column_label (str): Optional, label for y axis
         title (str): Optional, title of plot
         cmap (str): Matplotlib cmap option
         cbar_label (str): Optional, label for colorbar
@@ -619,10 +619,10 @@ def confusion_matrix(loom_file,
              rotation_mode="anchor")
     ax.set_yticks(np.arange(confusion.shape[0]))
     ax.set_yticklabels(confusion.index.values)
-    if xlabel is not None:
-        ax.set_xlabel(xlabel)
-    if ylabel is not None:
-        ax.set_ylabel(ylabel)
+    if row_label is not None:
+        ax.set_ylabel(row_label)
+    if column_label is not None:
+        ax.set_xlabel(column_label)
     cbar = ax.figure.colorbar(im,
                               ax=ax)
     if cbar_label is not None:
