@@ -16,6 +16,17 @@ gu_log = logging.getLogger(__name__)
 
 bin_dir = os.path.dirname(os.path.realpath(__file__))
 
+def make_unique_ids(max_number):
+    """
+    Used to make an array of unique identifiers for a loom file
+
+    Args:
+        max_number (int): Number of unique identifiers needed
+    """
+    fstr = '0{}'.format(len(str(max_number)))
+    init_list = list(range(0, max_number))
+    id_arr = np.asarray([format(i, fstr) for i in init_list])
+    return id_arr
 
 def round_unit(x,
                units=10,

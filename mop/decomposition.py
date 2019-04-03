@@ -16,34 +16,10 @@ import time
 from . import loom_utils
 from . import general_utils
 from . import statistics
+from . import decomposition_helpers as dh
 
 # Start log
 decomp_log = logging.getLogger(__name__)
-
-
-def prep_pca(view,
-             layer,
-             row_idx,
-             scale_attr=None):
-    """
-    Performs data processing for PCA on a given layer
-    
-    Args:
-        view (object): Slice of loom file
-        layer (str): Layer in view
-        row_idx (array): Features to use
-        scale_attr (str): If true, scale cells by this attribute
-            Typically used in snmC-seq to scale by a cell's mC/C
-    
-    Returns:
-        dat (matrix): Scaled data for PCA
-    """
-    dat = view.layers[layer][row_idx, :].copy()
-    if scale_attr is not None:
-        rel_scale = view.ca[scale_attr]
-        dat = np.divide(dat, rel_scale)
-    dat = dat.transpose()
-    return dat
 
 
 def batch_pca(loom_file,
@@ -105,10 +81,10 @@ def batch_pca(loom_file,
                                     layers=layers,
                                     axis=1,
                                     batch_size=batch_size):
-            dat = prep_pca(view=view,
-                           layer=layer,
-                           row_idx=row_idx,
-                           scale_attr=scale_attr)
+            dat = dh.prep_pca(view=view,
+                              layer=layer,
+                              row_idx=row_idx,
+                              scale_attr=scale_attr)
             pca.partial_fit(dat)
         if verbose:
             t_fit = time.time()
@@ -119,10 +95,10 @@ def batch_pca(loom_file,
                                             layers=layers,
                                             axis=1,
                                             batch_size=batch_size):
-            dat = prep_pca(view=view,
-                           layer=layer,
-                           row_idx=row_idx,
-                           scale_attr=scale_attr)
+            dat = dh.prep_pca(view=view,
+                              layer=layer,
+                              row_idx=row_idx,
+                              scale_attr=scale_attr)
             dat = pca.transform(dat)
             if drop_first:
                 dat = dat[:, 1:]
@@ -140,46 +116,6 @@ def batch_pca(loom_file,
             time_run, time_fmt = general_utils.format_run_time(t_fit, t_tran)
             decomp_log.info(
                 'Reduced dimensions in {0:.2f} {1}'.format(time_run, time_fmt))
-
-
-def prep_pca_contexts(view,
-                      layer_dict,
-                      cell_dict=None,
-                      global_dict=None,
-                      row_dict=None):
-    """
-    Performs data processing for PCA with multiple contexts
-    
-    Args:
-        view (object): Slice of loom file
-        layer_dict (dict): Dictionary of layers to include
-        cell_dict (dict): Attribute containing per cell levels
-            Typically, used with methylation (cell's global mC/C)
-        global_dict (dict): Context specific scale
-            Typically this is the std over all cells/features
-        row_dict (dict): Context specific attributes to restrict features by
-    
-    Returns:
-        comb_layers (matrix): Combined, scaled data
-    """
-
-    # Handle individual layers
-    comb_layers = []
-    for key in layer_dict:
-        layer = layer_dict[key]
-        row_idx = row_dict[key]
-        tmp = view.layers[layer][row_idx, :].copy()
-        if cell_dict:
-            rel_scale = view.ca[cell_dict[key]]
-            tmp = np.divide(tmp, rel_scale)
-        if global_dict:
-            tmp = tmp / global_dict[key]
-        comb_layers.append(tmp)
-    # Combine layers
-    comb_layers = np.vstack(comb_layers)
-    # Transpose for PCA
-    comb_layers = comb_layers.transpose()
-    return comb_layers
 
 
 def batch_pca_contexts(loom_file,
@@ -282,11 +218,11 @@ def batch_pca_contexts(loom_file,
                                     axis=1,
                                     layers=layers,
                                     batch_size=batch_size):
-            comb_layers = prep_pca_contexts(view,
-                                            layer_dict=layer_dict,
-                                            cell_dict=cell_dict,
-                                            global_dict=global_dict,
-                                            row_dict=row_idx)
+            comb_layers = dh.prep_pca_contexts(view,
+                                               layer_dict=layer_dict,
+                                               cell_dict=cell_dict,
+                                               global_dict=global_dict,
+                                               row_dict=row_idx)
             pca.partial_fit(comb_layers)
         if verbose:
             t_fit = time.time()
@@ -297,11 +233,11 @@ def batch_pca_contexts(loom_file,
                                             axis=1,
                                             layers=layers,
                                             batch_size=batch_size):
-            comb_layers = prep_pca_contexts(view,
-                                            layer_dict=layer_dict,
-                                            cell_dict=cell_dict,
-                                            global_dict=global_dict,
-                                            row_dict=row_idx)
+            comb_layers = dh.prep_pca_contexts(view,
+                                               layer_dict=layer_dict,
+                                               cell_dict=cell_dict,
+                                               global_dict=global_dict,
+                                               row_dict=row_idx)
             comb_layers = pca.transform(comb_layers)
             if drop_first:
                 comb_layers = comb_layers[:, 1:]

@@ -20,19 +20,6 @@ from . import general_utils
 io_log = logging.getLogger(__name__)
 
 
-def make_unique_ids(max_number):
-    """
-    Used to make an array of unique identifiers for a loom file
-
-    Args:
-        max_number (int): Number of unique identifiers needed
-    """
-    fstr = '0{}'.format(len(str(max_number)))
-    init_list = list(range(0, max_number))
-    id_arr = np.asarray([format(i, fstr) for i in init_list])
-    return id_arr
-
-
 def add_dense(count_file,
               loom_file,
               feature_axis,
@@ -97,11 +84,11 @@ def add_dense(count_file,
         raise ValueError(err_msg)
     # Prepare data for loom
     if feature_id is None:
-        loom_feat = make_unique_ids(max_number=dat.shape[0])
+        loom_feat = general_utils.make_unique_ids(max_number=dat.shape[0])
     else:
         loom_feat = dat.index.values.astype(str)
     if observation_id is None:
-        loom_obs = make_unique_ids(max_number=dat.shape[1])
+        loom_obs = general_utils.make_unique_ids(max_number=dat.shape[1])
     else:
         loom_obs = dat.columns.values.astype(str)
     dat = sparse.csc_matrix(dat.values)
@@ -198,15 +185,15 @@ def batch_add_sparse(loom_file,
     if verbose:
         t1 = time.time()
         time_run, time_fmt = general_utils.format_run_time(t0, t1)
-        io_log.info('Wrote loom file in {0:.2f} {1}'.format(time_run,time_fmt))
+        io_log.info('Wrote loom file in {0:.2f} {1}'.format(time_run, time_fmt))
 
 
 def cellranger_bc_h5_to_loom(h5_file,
-        loom_file,
-        barcode_prefix=None,
-        append=False,
-        batch_size=512,
-        verbose=False):
+                             loom_file,
+                             barcode_prefix=None,
+                             append=False,
+                             batch_size=512,
+                             verbose=False):
     """
     Converts a 10x formatted H5 file into the loom format
 
@@ -255,7 +242,8 @@ def cellranger_bc_h5_to_loom(h5_file,
         feature_group = f.get_node(mat_group, 'features')
         row_attrs['Accession'] = getattr(feature_group, 'id').read().astype(str)
         row_attrs['Name'] = getattr(feature_group, 'name').read().astype(str)
-        row_attrs['10x_type'] = getattr(feature_group, 'feature_type').read().astype(str)
+        row_attrs['10x_type'] = getattr(feature_group,
+                                        'feature_type').read().astype(str)
         tag_keys = getattr(feature_group, '_all_tag_keys').read().astype(str)
         for key in tag_keys:
             row_attrs[key] = getattr(feature_group, key).read().astype(str)

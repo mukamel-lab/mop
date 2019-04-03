@@ -19,6 +19,18 @@ lu_log = logging.getLogger(__name__)
 def get_pct(loom_file,
             num_val,
             columns=True):
+    """
+    Returns num_val divided by size of the loom file times 100
+
+    Args:
+        loom_file (str): Path to loom file
+        num_val (int): Number to get percentage for
+        columns (bool): Get percentage based off number of columns
+            If false, gets percentage based off number of rows
+
+    Returns:
+        pct (float): Percentage of num_val in loom_file
+    """
     if columns:
         axis = 1
     else:
@@ -31,6 +43,23 @@ def get_pct(loom_file,
 def check_for_values(loom_file,
                      values,
                      component):
+    """
+    Checks if something is part of a loom file
+
+    Args:
+        loom_file (str): Path to loom file
+        values (str,list): Things to search for in component
+        component (str): Component of a loom file
+            ca: column attribute
+            ra: row attribute
+            attr: attribute
+            layers: layers
+            col_graphs: column graph
+            row_graphs: row graph
+
+    Returns:
+        None (will error if value is not in component)
+    """
     with loompy.connect(filename=loom_file, mode='r') as ds:
         if component == 'ca':
             options = ds.ca.keys()
