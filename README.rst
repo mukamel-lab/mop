@@ -16,7 +16,7 @@ Requirements
 * scipy
 * scikit-learn
 * annoy
-* fitsne
+* MulticoreTSNE
 * louvain
 * python-igraph
 
@@ -36,17 +36,7 @@ the command line::
 
 There are some reported issues when running setup.py install related to the installation
 of some dependencies. If you are using a conda environment the best way to solve these
-issues is to perform the following commands before running setup.py install::
-
-
-    conda install -c conda-forge gcc cython numpy fftw louvain python-igraph
-    pip install --user annoy
-    pip install fitsne
-    pip install --user loompy
-
-
-If you are continuing to have trouble installing the dependencies for MoP, a guide to creating
-a MoP-specific conda environment can be found `here <docs/mop_conda_guide.rst>`_.
+issues is to follow our `guide <docs/mop_conda_guide.rst>`_.
 
 Authors
 -------

@@ -28,7 +28,7 @@ setup(
     packages=find_packages(exclude=('tests',)),
 
     install_requires=['annoy>=1.13.0',
-        'fitsne>=0.2.3',
+        'multicoretsne>=0.1',
         'loompy>=2.0.16',
         'louvain>=0.6.1',
         'numpy>=1.15.4',
