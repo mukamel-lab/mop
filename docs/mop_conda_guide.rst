@@ -18,14 +18,13 @@ following channels (if you do ::
 To install the necessary packages for MoP, please run the following lines of code::
 
     conda create --name mop_env python=3.7
-    conda install pip gcc
-    conda install cython numpy fftw pytables pandas
+    conda install numpy pytables pandas
     conda install scipy scikit-learn numba
     conda install louvain python-igraph
     conda install seaborn matplotlib
     conda install umap-learn
-    pip install --user annoy
-    pip install --user loompy
-    pip install --user fitsne
+    pip install annoy
+    pip install cmake
+    pip install MulticoreTSNE
 
 
