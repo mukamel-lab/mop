@@ -9,7 +9,7 @@ import loompy
 import numpy as np
 import pandas as pd
 from sklearn.decomposition import IncrementalPCA
-from fitsne import FItSNE
+from MulticoreTSNE import MulticoreTSNE as TSNE
 import umap
 import logging
 import time
@@ -333,12 +333,11 @@ def run_tsne(loom_file,
         if verbose:
             decomp_log.info('Fitting tSNE')
             t0 = time.time()
-        ts = FItSNE(components,
-                    no_dims=n_tsne,
-                    perplexity=perp,
-                    rand_seed=seed,
-                    nthreads=n_proc,
-                    max_iter=n_iter)
+        ts = TSNE(n_jobs=n_proc,
+                  n_components=n_tsne,
+                  perplexity=perp,
+                  n_iter=n_iter,
+                  random_state=seed).fit_transform(components)
         # Format for loom
         if n_tsne == 2:
             df_tsne = pd.DataFrame(ts,
