@@ -20,10 +20,6 @@ Requirements
 * louvain
 * python-igraph
 
-Usage
------
-Coming at some point in the future.
-
 Installation
 ------------
 The only way to install MoP is by cloning the GitHub repository. Enter the directory
@@ -37,6 +33,11 @@ the command line::
 There are some reported issues when running setup.py install related to the installation
 of some dependencies. If you are using a conda environment the best way to solve these
 issues is to follow our `guide <docs/mop_conda_guide.rst>`_.
+
+Tutorials and FAQs
+--------------------
+For an example notebook showing the processing of methylome (snmC-seq) data please check out
+this `link <docs/process_snmc_example.html>`_.
 
 Authors
 -------
