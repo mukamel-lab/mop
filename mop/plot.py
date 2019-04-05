@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import logging
 import matplotlib.pyplot as plt
+import seaborn as sns
 from collections import defaultdict
 from . import general_utils
 from . import loom_utils
@@ -534,7 +535,7 @@ def sankey(loom_file,
                                 alpha=0.5,
                                 color=line_col.loc[l_label][0])
     ax.set_ylabel(left_label)
-    ax.yaxis.set_label_coords(-0.05,.5)
+    ax.yaxis.set_label_coords(-0.05, .5)
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.spines['bottom'].set_visible(False)
@@ -543,7 +544,7 @@ def sankey(loom_file,
     ax.get_yaxis().set_ticks([])
     ax_r = plt.gca().twinx()
     ax_r.set_ylabel(right_label)
-    ax_r.yaxis.set_label_coords(1.05,.5)
+    ax_r.yaxis.set_label_coords(1.05, .5)
     ax_r.spines['top'].set_visible(False)
     ax_r.spines['right'].set_visible(False)
     ax_r.spines['bottom'].set_visible(False)
@@ -931,16 +932,17 @@ def barplot_cell(loom_file,
                                 value_attr: ds.ca[value_attr][col_idx]})
         if color_attr is None:
             df_plot = ph.get_category_colors(df_plot=df_plot,
-                                            category_label=value_attr,
-                                            color_label='color')
+                                             category_label=value_attr,
+                                             color_label='color')
         else:
             df_plot['color'] = ds.ca[color_attr][col_idx]
     # Handle highlighting
     df_plot, is_high = ph.process_highlight(df_plot=df_plot,
-                                              highlight_attr=category_attr,
-                                              highlight_values=highlight)
+                                            highlight_attr=category_attr,
+                                            highlight_values=highlight)
     if is_high:
-        df_plot = df_plot.loc[df_plot.index[df_plot[category_attr].isin(highlight)]]
+        df_plot = df_plot.loc[
+            df_plot.index[df_plot[category_attr].isin(highlight)]]
     # Prep for bar plot
     bar_info = df_plot.groupby(category_attr)[
         value_attr].value_counts().unstack().fillna(0)
@@ -983,6 +985,96 @@ def barplot_cell(loom_file,
         else:
             fig.savefig(output,
                         dpi=300)
+        plot_log.info('Saved figure to {}'.format(output))
+    if close:
+        plt.close()
+
+
+def dist_cell(loom_file,
+              plot_attr,
+              bins=None,
+              hist=False,
+              kde=True,
+              log_transform=None,
+              valid_attr=None,
+              output=None,
+              x_label=None,
+              y_label=None,
+              title=None,
+              figsize=(8, 6),
+              close=False,
+              fig=None,
+              ax=None,
+              **kwargs):
+    """
+    Generates a distribution plot of column attributes in a loom file
+
+    Args:
+        loom_file (str): Path to loom file
+        plot_attr (str): Column attribute to plot
+        bins (int,seq): Arguments for matplotlib's hist
+            If int: bins + 1 edges are returned
+            If seq: provides bin edges
+        hist (bool): Plot a histogram
+        kde (bool): Plot a kernel density estimate
+        log_transform (str): Optional, log transform values before plotting
+            String specifies the numpy method for log transformation:
+                log2
+                log10
+                log
+        valid_attr (str): Optional, valid cells to include
+        output (str): Optional, path to output figure
+        x_label (str): Optional, label for x-axis
+        y_label (str): Optional, label for y-axis
+        title (str): Optional, title for plot
+        figsize (tuple): Size of figure
+        close (bool): If true, closes figure after generating
+        fig (object): Add plot to specified figure
+        ax (object): Add plot to specified axis
+        **kwargs: keyword arguments for seaborn's distplot function
+    """
+    # Get indices
+    col_idx = loom_utils.get_attr_index(loom_file=loom_file,
+                                        attr=valid_attr,
+                                        columns=True,
+                                        as_bool=False,
+                                        inverse=False)
+    # Get data
+    with loompy.connect(loom_file) as ds:
+        values = ds.ca[plot_attr][col_idx]
+    if log_transform is None:
+        pass
+    elif log_transform == 'log2':
+        values = np.log2(values)
+    elif log_transform == 'log10':
+        values = np.log10(values)
+    elif log_transform == 'log':
+        values = np.log(values)
+    # Set-up plot
+    if ax is None and fig is None:
+        fig, ax = plt.subplots(figsize=figsize)
+    elif ax is None and fig is not None:
+        raise ValueError('Both ax and fig must be provided')
+    elif ax is not None and fig is None:
+        raise ValueError('Both ax and fig must be provided')
+    # Make figure
+    sns.distplot(a=values,
+                 bins=bins,
+                 hist=hist,
+                 kde=kde,
+                 ax=ax,
+                 **kwargs)
+    # Modify figure
+    if title is not None:
+        ax.set_title(title)
+    if x_label is not None:
+        ax.set_xlabel(x_label)
+    if y_label is not None:
+        ax.set_ylabel(y_label)
+    # Save figure
+    if output:
+        fig.savefig(output,
+                    dpi=300)
         plot_log.info('Saved figure to {}'.format(output))
     if close:
         plt.close()
