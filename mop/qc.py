@@ -22,8 +22,8 @@ def label_covered_features(loom_file,
                            out_attr,
                            min_count=1,
                            fraction_covered=0.01,
-                           col_attr=None,
-                           row_attr=None,
+                           valid_ca=None,
+                           valid_ra=None,
                            batch_size=512,
                            verbose=False):
     """
@@ -36,20 +36,20 @@ def label_covered_features(loom_file,
         min_count (int/float): Minimum count for a covered feature (>=)
         fraction_covered (float): Minimum fraction of cells with coverage (>=)
             If None, only oen cells is needed
-        col_attr (str): Optional, attribute to restrict cells by
-        row_attr (str): Optional, attribute to restrict features by
+        valid_ca (str): Optional, attribute to restrict cells by
+        valid_ra (str): Optional, attribute to restrict features by
         batch_size (int): Size of chunks
             Dense array of batch_size by number of cells will be generated
         verbose (bool): Print logging messages
     """
     # Get indices for items of interest
     col_idx = loom_utils.get_attr_index(loom_file=loom_file,
-                                        attr=col_attr,
+                                        attr=valid_ca,
                                         columns=True,
                                         as_bool=True,
                                         inverse=False)
     row_idx = loom_utils.get_attr_index(loom_file=loom_file,
-                                        attr=row_attr,
+                                        attr=valid_ra,
                                         columns=False,
                                         as_bool=True,
                                         inverse=False)
@@ -92,8 +92,8 @@ def label_covered_cells(loom_file,
                         out_attr,
                         min_count=1,
                         fraction_covered=None,
-                        col_attr=None,
-                        row_attr=None,
+                        valid_ca=None,
+                        valid_ra=None,
                         batch_size=512,
                         verbose=False):
     """
@@ -106,20 +106,20 @@ def label_covered_cells(loom_file,
         min_count (int/float): Minimum count for a covered feature (>=)
         fraction_covered (float): Minimum fraction of covered features (>=)
             If not provided, only one feature must have min_val
-        col_attr (str): Optional, attribute to restrict cells by
-        row_attr (str): Optional, attribute to restrict features by
+        valid_ca (str): Optional, attribute to restrict cells by
+        valid_ra (str): Optional, attribute to restrict features by
         batch_size (int): Size of chunks
             Dense array of batch_size by number of cells will be generated
         verbose (bool): Print logging messages
     """
     # Get indices for items of interest
     col_idx = loom_utils.get_attr_index(loom_file=loom_file,
-                                        attr=col_attr,
+                                        attr=valid_ca,
                                         columns=True,
                                         as_bool=True,
                                         inverse=False)
     row_idx = loom_utils.get_attr_index(loom_file=loom_file,
-                                        attr=row_attr,
+                                        attr=valid_ra,
                                         columns=False,
                                         as_bool=True,
                                         inverse=False)
@@ -193,8 +193,8 @@ def label_cells_and_features(loom_file,
                         out_attr=out_ca,
                         min_count=min_feature,
                         fraction_covered=fraction_feature,
-                        col_attr=valid_ca,
-                        row_attr=valid_ra,
+                        valid_ca=valid_ca,
+                        valid_ra=valid_ra,
                         batch_size=batch_size,
                         verbose=verbose)
     label_covered_features(loom_file=loom_file,
@@ -202,7 +202,105 @@ def label_cells_and_features(loom_file,
                            out_attr=out_ra,
                            min_count=min_cell,
                            fraction_covered=fraction_cell,
-                           col_attr=valid_ca,
-                           row_attr=valid_ra,
+                           valid_ca=valid_ca,
+                           valid_ra=valid_ra,
                            batch_size=batch_size,
                            verbose=verbose)
+
+
+def get_cell_coverage(loom_file,
+                      layer,
+                      out_attr,
+                      min_count=1,
+                      valid_ra=None,
+                      valid_ca=None,
+                      batch_size=512):
+    """
+    Saves the number of covered features per cell
+
+    Args:
+        loom_file (str): Path to loom file
+        layer (str): Layer of counts to consider
+        out_attr (str): Name of row attribute specifying valid features
+        min_count (int/float): Minimum count for a covered feature (>=)
+        valid_ca (str): Optional, attribute to restrict cells by
+        valid_ra (str): Optional, attribute to restrict features by
+        batch_size (int): Size of chunks
+            Dense array of batch_size by number of cells will be generated
+    """
+    # Get indices for items of interest
+    col_idx = loom_utils.get_attr_index(loom_file=loom_file,
+                                        attr=valid_ca,
+                                        columns=True,
+                                        as_bool=True,
+                                        inverse=False)
+    row_idx = loom_utils.get_attr_index(loom_file=loom_file,
+                                        attr=valid_ra,
+                                        columns=False,
+                                        as_bool=True,
+                                        inverse=False)
+    layers = loom_utils.make_layer_list(layers=layer)
+    # Get index of valid features
+    with loompy.connect(filename=loom_file) as ds:
+        valid_idx = np.zeros((ds.shape[1],), dtype=int)
+        for (_, selection, view) in ds.scan(items=col_idx,
+                                            layers=layers,
+                                            batch_size=batch_size,
+                                            axis=1):
+            min_num = np.sum(view.layers[layer][row_idx, :] >= min_count,
+                             axis=0)
+            valid_idx[selection] = min_num
+        ds.ca[out_attr] = valid_idx
+
+
+def label_cells_by_attrs(loom_file,
+                         out_attr='Valid_QC',
+                         high_values=None,
+                         low_values=None,
+                         verbose=False):
+    """
+    Generates an array of valid cells by thresholding attributes
+
+    Args:
+        loom_file (str): Path to loom file
+        out_attr (str): Name of output column attribute
+            Will contain array of valid cells
+        high_values (dict): Values to restrict by
+            keys are column attributes
+            values are maximum values (<=)
+        low_values (dict): Values to restrict by
+            keys are column attributes
+            values are mininum values (>=)
+        verbose (bool): Print logging messages
+    """
+    if verbose:
+        qc_log.info('Finding valid cells for {}'.format(loom_file))
+        t0 = time.time()
+    with loompy.connect(loom_file) as ds:
+        # Set up qc columns
+        high_qc = np.ones(ds.shape[1], dtype=bool)
+        low_qc = np.ones(ds.shape[1], dtype=bool)
+        # Get cells that pass high QC
+        if high_values is not None:
+            for key in high_values.keys():
+                tmp = ds.ca[key] <= high_values[key]
+                high_qc = np.logical_and(high_qc, tmp)
+        # Get cells that pass low QC
+        if low_values is not None:
+            for key in low_values.keys():
+                tmp = ds.ca[key] >= low_values[key]
+                low_qc = np.logical_and(low_qc, tmp)
+        # Get cells that pass QC
+        qc_col = np.logical_and(high_qc, low_qc)
+        ds.ca[out_attr] = qc_col.astype(int)
+    if verbose:
+        t1 = time.time()
+        time_run, time_fmt = general_utils.format_run_time(t0, t1)
+        qc_msg = 'Found {0} valid cells ({1}%) in {2:.2f} {3}'
+        num_cell = np.sum(qc_col)
+        qc_log.info(qc_msg.format(num_cell,
+                                  loom_utils.get_pct(loom_file=loom_file,
+                                                     num_val=num_cell,
+                                                     columns=True),
+                                  time_run,
+                                  time_fmt))
