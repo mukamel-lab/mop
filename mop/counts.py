@@ -64,8 +64,8 @@ def normalize_counts(loom_file,
                      method,
                      in_layer,
                      out_layer,
-                     row_attr=None,
-                     col_attr=None,
+                     valid_ra=None,
+                     valid_ca=None,
                      length_attr=None,
                      batch_size=512,
                      verbose=False):
@@ -80,8 +80,8 @@ def normalize_counts(loom_file,
             tpm: Normalize per TPM method
         in_layer (str): Name of input layer containing unnormalized counts
         out_layer (str): Name of output layer containing normalized counts
-        row_attr (str): Attribute specifying rows to include
-        col_attr (str): Attribute specifying columns to include
+        valid_ra (str): Attribute specifying rows to include
+        valid_ca (str): Attribute specifying columns to include
         length_attr (str): Attribute specifying length of each feature in bases
             Must be provided if method == rpkm or method == tpm
         batch_size (int): Size of each chunk
@@ -92,12 +92,12 @@ def normalize_counts(loom_file,
         t0 = time.time()
         count_log.info('Normalizing counts by {}'.format(method))
     col_idx = loom_utils.get_attr_index(loom_file=loom_file,
-                                        attr=col_attr,
+                                        attr=valid_ca,
                                         columns=True,
                                         as_bool=False,
                                         inverse=False)
     row_idx = loom_utils.get_attr_index(loom_file=loom_file,
-                                        attr=row_attr,
+                                        attr=valid_ra,
                                         columns=False,
                                         as_bool=False,
                                         inverse=False)
@@ -211,7 +211,7 @@ def find_putative_neurons(loom_file,
                           out_attr='Valid_Neuron',
                           neuron_id='ENSMUSG00000027273.13',
                           gene_attr='Accession',
-                          valid_attr=None,
+                          valid_ca=None,
                           q=0.95,
                           verbose=False):
     """
@@ -224,12 +224,12 @@ def find_putative_neurons(loom_file,
         out_attr (str): Output attribute
         neuron_id (str): Name of feature marker for putative neurons
         gene_attr (str): Name of attribute where neuron_id is located
-        valid_attr (str): Name of attribute to restrict cells
+        valid_ca (str): Name of attribute to restrict cells
         q (float): Quantile for a cell to be considered a neuron
         verbose (bool): If true, print logging messages
     """
     col_idx = loom_utils.get_attr_index(loom_file=loom_file,
-                                        attr=valid_attr,
+                                        attr=valid_ca,
                                         columns=True,
                                         as_bool=True,
                                         inverse=False)
@@ -262,8 +262,8 @@ def find_putative_neurons(loom_file,
 def calculate_10x_library(loom_file,
                           layer,
                           out_attr,
-                          col_attr=None,
-                          row_attr=None,
+                          valid_ca=None,
+                          valid_ra=None,
                           batch_size=512,
                           verbose=False):
     """
@@ -273,8 +273,8 @@ def calculate_10x_library(loom_file,
         loom_file (str): Path to loom file
         layer (str): Layer containing UMI counts
         out_attr (str): Name of output column attribute containing library sizes
-        col_attr (str): Optional, name of attribute for restricting columns
-        row_attr (str): Optional, name of attribute for restricting rows
+        valid_ca (str): Optional, name of attribute for restricting columns
+        valid_ra (str): Optional, name of attribute for restricting rows
         batch_size (int): Size of chunks
         verbose (bool): If true, print logging messages
     """
@@ -284,12 +284,12 @@ def calculate_10x_library(loom_file,
         t0 = time.time()
     # Get indices
     col_idx = loom_utils.get_attr_index(loom_file=loom_file,
-                                        attr=col_attr,
+                                        attr=valid_ca,
                                         columns=True,
                                         as_bool=True,
                                         inverse=False)
     row_idx = loom_utils.get_attr_index(loom_file=loom_file,
-                                        attr=row_attr,
+                                        attr=valid_ra,
                                         columns=False,
                                         as_bool=True,
                                         inverse=False)
@@ -315,8 +315,8 @@ def normalize_10x(loom_file,
                   out_layer,
                   size_attr,
                   gen_size=False,
-                  col_attr=None,
-                  row_attr=None,
+                  valid_ca=None,
+                  valid_ra=None,
                   batch_size=512,
                   verbose=False):
     """
@@ -329,8 +329,8 @@ def normalize_10x(loom_file,
         out_layer (str): Specifies ouput layer for normalized counts
         size_attr (str): Name of column attribute containing library sizes
         gen_size (bool): If true, generate library sizes and save as size_attr
-        col_attr (str): Optional, name of attribute for restricting columns
-        row_attr (str): Optional, name of attribute for restricting rows
+        valid_ca (str): Optional, name of attribute for restricting columns
+        valid_ra (str): Optional, name of attribute for restricting rows
         batch_size (int): Size of chunks
         verbose (bool): If true, print logging messages
     """
@@ -343,18 +343,18 @@ def normalize_10x(loom_file,
         calculate_10x_library(loom_file=loom_file,
                               layer=in_layer,
                               out_attr=size_attr,
-                              col_attr=col_attr,
-                              row_attr=row_attr,
+                              valid_ca=valid_ca,
+                              valid_ra=valid_ra,
                               batch_size=batch_size,
                               verbose=verbose)
     # Get indices
     col_idx = loom_utils.get_attr_index(loom_file=loom_file,
-                                        attr=col_attr,
+                                        attr=valid_ca,
                                         columns=True,
                                         as_bool=True,
                                         inverse=False)
     row_idx = loom_utils.get_attr_index(loom_file=loom_file,
-                                        attr=row_attr,
+                                        attr=valid_ra,
                                         columns=False,
                                         as_bool=True,
                                         inverse=True)

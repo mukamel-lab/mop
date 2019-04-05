@@ -20,13 +20,13 @@ clust_log = logging.getLogger(__name__)
 def louvain_jaccard(loom_file,
                     clust_attr='ClusterID',
                     cell_attr='CellID',
-                    valid_attr=None,
+                    valid_ca=None,
                     gen_pca=False,
                     pca_attr=None,
                     layer='',
                     n_pca=50,
                     drop_first=False,
-                    row_attr=None,
+                    valid_ra=None,
                     scale_attr=None,
                     gen_knn=False,
                     neighbor_attr=None,
@@ -48,8 +48,8 @@ def louvain_jaccard(loom_file,
             Convention is ClusterID
         cell_attr (str): Attribute specifying cell IDs
             Convention is CellID
-        valid_attr (str): Attribute specifying cells to include
-        row_attr (str): Attribute specifying features to include in PCA
+        valid_ca (str): Attribute specifying cells to include
+        valid_ra (str): Attribute specifying features to include in PCA
         gen_pca (bool): If true, perform dimensionality reduction
         pca_attr (str): Name of attribute containing PCs
             If gen_pca, this is the name of the output attribute
@@ -60,7 +60,7 @@ def louvain_jaccard(loom_file,
             Useful if the first PC correlates with a technical feature
             If true, a total of n_pca is still generated and added to loom_file
             If true, the first principal component will be lost
-        row_attr (str): Attribute specifying features to include
+        valid_ra (str): Attribute specifying features to include
             Only used if performing PCA 
         scale_attr (str): Optional, attribute specifying cell scaling factor
             Only used if performing PCA
@@ -94,8 +94,8 @@ def louvain_jaccard(loom_file,
         decomposition.batch_pca(loom_file=loom_file,
                                 layer=layer,
                                 out_attr=pca_attr,
-                                col_attr=valid_attr,
-                                row_attr=row_attr,
+                                valid_ca=valid_ca,
+                                valid_ra=valid_ra,
                                 scale_attr=scale_attr,
                                 n_pca=n_pca,
                                 drop_first=drop_first,
@@ -109,7 +109,7 @@ def louvain_jaccard(loom_file,
             distance_attr = 'k{}_distances'.format(k)
         neighbors.generate_knn(loom_file=loom_file,
                                dat_attr=pca_attr,
-                               valid_attr=valid_attr,
+                               valid_ca=valid_ca,
                                neighbor_attr=neighbor_attr,
                                distance_attr=distance_attr,
                                k=k,
@@ -129,7 +129,7 @@ def louvain_jaccard(loom_file,
                                  normalize=False,
                                  normalize_axis=None,
                                  offset=None,
-                                 valid_attr=valid_attr,
+                                 valid_ca=valid_ca,
                                  batch_size=batch_size)
     if clust_attr is None:
         clust_attr = 'ClusterID'
@@ -137,7 +137,7 @@ def louvain_jaccard(loom_file,
                              graph_attr=jaccard_graph,
                              clust_attr=clust_attr,
                              cell_attr=cell_attr,
-                             valid_attr=valid_attr,
+                             valid_ca=valid_ca,
                              directed=True,
                              seed=seed,
                              verbose=verbose)
@@ -245,12 +245,12 @@ def cluster_and_reduce(loom_file,
     louvain_jaccard(loom_file=loom_file,
                     clust_attr=clust_attr,
                     cell_attr=cell_attr,
-                    valid_attr=valid_ca,
+                    valid_ca=valid_ca,
                     gen_pca=gen_pca,
                     pca_attr=pca_attr,
                     layer=layer,
                     n_pca=n_pca,
-                    row_attr=valid_ra,
+                    valid_ra=valid_ra,
                     scale_attr=scale_attr,
                     gen_knn=gen_knn,
                     neighbor_attr=neighbor_attr,
@@ -278,10 +278,10 @@ def cluster_and_reduce(loom_file,
         decomposition.run_tsne(loom_file=loom_file,
                                cell_attr=cell_attr,
                                out_attr=reduce_attr,
-                               valid_attr=valid_ca,
+                               valid_ca=valid_ca,
                                gen_pca=False,
                                pca_attr=pca_attr,
-                               row_attr=valid_ra,
+                               valid_ra=valid_ra,
                                scale_attr=scale_attr,
                                n_pca=50,
                                layer='',
@@ -296,10 +296,10 @@ def cluster_and_reduce(loom_file,
         decomposition.run_umap(loom_file=loom_file,
                                cell_attr=cell_attr,
                                out_attr=reduce_attr,
-                               valid_attr=valid_ca,
+                               valid_ca=valid_ca,
                                gen_pca=False,
                                pca_attr=pca_attr,
-                               row_attr=valid_ra,
+                               valid_ra=valid_ra,
                                scale_attr=scale_attr,
                                n_pca=50,
                                layer='',

@@ -22,7 +22,7 @@ graph_log = logging.getLogger(__name__)
 
 def generate_knn(loom_file,
                  dat_attr,
-                 valid_attr=None,
+                 valid_ca=None,
                  neighbor_attr=None,
                  distance_attr=None,
                  k=30,
@@ -37,7 +37,7 @@ def generate_knn(loom_file,
         loom_file (str): Path to loom file
         dat_attr (str): Name of attribute containing data for fitting kNN
             Highly recommended to perform on PCs
-        valid_attr (str): Optional, name of attribute to restrict cells by
+        valid_ca (str): Optional, name of attribute to restrict cells by
         neighbor_attr (str): Optional, attribute specifying neighbor indices
             Defaults to k{k}_neighbors
         distance_attr (str): Optional, attribute specifying distances
@@ -57,7 +57,7 @@ def generate_knn(loom_file,
     if distance_attr is None:
         distance_attr = 'k{}_distances'.format(k)
     col_idx = loom_utils.get_attr_index(loom_file=loom_file,
-                                        attr=valid_attr,
+                                        attr=valid_ca,
                                         columns=True,
                                         as_bool=False,
                                         inverse=False)
@@ -113,7 +113,7 @@ def generate_knn(loom_file,
 
 def generate_adjacency_matrix(loom_file,
                               neighbor_attr,
-                              valid_attr=None,
+                              valid_ca=None,
                               batch_size=512):
     """
     Takes the indices from a kNN and generates a square, sparse adjacency matrix
@@ -121,7 +121,7 @@ def generate_adjacency_matrix(loom_file,
     Args:
         loom_file (str): Path to loom file
         neighbor_attr (str): Attribute specifying neighbor indices
-        valid_attr (str): Optional, name of attribute to restrict cells by
+        valid_ca (str): Optional, name of attribute to restrict cells by
         batch_size (int): Size of chunks
             Dense matrices of batch_size by k will be generated (k from kNN)
     
@@ -129,7 +129,7 @@ def generate_adjacency_matrix(loom_file,
         adj_mtx (sparse matrix): Adjacency matrix
     """
     col_idx = loom_utils.get_attr_index(loom_file=loom_file,
-                                        attr=valid_attr,
+                                        attr=valid_ca,
                                         columns=True,
                                         as_bool=False,
                                         inverse=False)
@@ -262,7 +262,7 @@ def loom_adjacency(loom_file,
                    normalize=False,
                    normalize_axis=None,
                    offset=1e-5,
-                   valid_attr=None,
+                   valid_ca=None,
                    batch_size=512):
     """
     Generates and adds an adjacency matrix to a loom file
@@ -279,7 +279,7 @@ def loom_adjacency(loom_file,
             both (str): Normalize along columns, followed by rows
             None: Returns adj_mtx
         offset (float/int): Offset to avoid divide by zero errors
-        valid_attr (str): Optional, name of attribute to restrict cells by
+        valid_ca (str): Optional, name of attribute to restrict cells by
         batch_size (int): Size of chunks
             Dense matrices of batch_size by k will be generated (k from kNN)
         
@@ -289,7 +289,7 @@ def loom_adjacency(loom_file,
 
     adj_mtx = generate_adjacency_matrix(loom_file=loom_file,
                                         neighbor_attr=neighbor_attr,
-                                        valid_attr=valid_attr,
+                                        valid_ca=valid_ca,
                                         batch_size=batch_size)
     if weight:
         adj_mtx = compute_jaccard_weights(adj_mtx)

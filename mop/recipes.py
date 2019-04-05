@@ -115,7 +115,7 @@ def process_10x(loom_file,
                                      verbose=verbose)
     # Smooth data
     smooth.smooth_counts(loom_file = loom_file,
-                             valid_attr = valid_ca,
+                             valid_ca = valid_ca,
                              gen_pca = False,
                              pca_attr = observed_pca,
                              n_pca = n_pca,
@@ -272,7 +272,7 @@ def process_atac_gene(loom_file,
                                      verbose=verbose)
     # Smooth data
     smooth.smooth_counts(loom_file = loom_file,
-                             valid_attr = valid_ca,
+                             valid_ca = valid_ca,
                              gen_pca = False,
                              pca_attr = observed_pca,
                              n_pca = n_pca,

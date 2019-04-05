@@ -23,8 +23,8 @@ def calculate_mcc(loom_file,
                   c_layer,
                   out_layer,
                   mean_impute=True,
-                  row_attr=None,
-                  col_attr=None,
+                  valid_ra=None,
+                  valid_ca=None,
                   batch_size=512,
                   verbose=False):
     """
@@ -44,8 +44,8 @@ def calculate_mcc(loom_file,
                 Cells/features from (col/row)_attr
         mean_impute (bool): Replace missing mC/C values with population mean
             Does not apply to locations restricted by (col/row)_attr
-        row_attr (str): Optional, attribute to restrict features by
-        col_attr (str): Optional, attribute to restrict 
+        valid_ra (str): Optional, attribute to restrict features by
+        valid_ca (str): Optional, attribute to restrict
         batch_size (int): Chunk size
         verbose: Print logging messages
     """
@@ -64,12 +64,12 @@ def calculate_mcc(loom_file,
                     mc_log.error(err_msg)
                 raise ValueError(err_msg)
     col_idx = loom_utils.get_attr_index(loom_file=loom_file,
-                                        attr=col_attr,
+                                        attr=valid_ca,
                                         columns=True,
                                         as_bool=True,
                                         inverse=False)
     row_idx = loom_utils.get_attr_index(loom_file=loom_file,
-                                        attr=row_attr,
+                                        attr=valid_ra,
                                         columns=False,
                                         as_bool=True,
                                         inverse=True)

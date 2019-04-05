@@ -960,7 +960,7 @@ def allen_metadata(loom_file,
                    annotation,
                    membership,
                    id_attr='CellID',
-                   valid_attr=None):
+                   valid_ca=None):
     """
     Parses and adds Allen's meta-data to a loom file
     
@@ -969,7 +969,7 @@ def allen_metadata(loom_file,
         annotation (str): Path to Allen's annotation file
         membership (str): Path to Allen's cluster membership file
         id_attr (str): Column attribute in loom_file with cell identifiers
-        valid_attr (str): Column attribute in loom_file specifying valid cells
+        valid_ca (str): Column attribute in loom_file specifying valid cells
     """
     # Read files
     anno_dat = pd.read_csv(annotation,

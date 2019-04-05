@@ -732,7 +732,7 @@ def prep_feature_dist(loom_file,
                       feat_attr='Accession',
                       scale_attr=None,
                       color_attr=None,
-                      valid_attr=None,
+                      valid_ca=None,
                       highlight=None):
     """
     Makes a dataframe for plotting feature count information
@@ -746,14 +746,14 @@ def prep_feature_dist(loom_file,
         scale_attr (str): Optional, attribute specifying scale for values
             Useful for methylation data
         color_attr (str): Optional, column attribute with color values
-        valid_attr (str): Optional, column attribute specifying cells to include
+        valid_ca (str): Optional, column attribute specifying cells to include
         highlight (str/list): Optional, categories to plot
 
     Returns:
         df_plot (dataframe): Contains data for plotting
     """
     col_idx = loom_utils.get_attr_index(loom_file=loom_file,
-                                        attr=valid_attr,
+                                        attr=valid_ca,
                                         columns=True,
                                         as_bool=False,
                                         inverse=False)
@@ -799,7 +799,7 @@ def prep_categorical_dist(loom_file,
                           category_attr,
                           value_attr,
                           color_attr=None,
-                          valid_attr=None,
+                          valid_ca=None,
                           highlight=None):
     """
     Makes a dataframe for plotting categorical data distributions
@@ -809,14 +809,14 @@ def prep_categorical_dist(loom_file,
         category_attr (str): Name of column attribute for categories
         value_attr (str): Name of column attribute for values
         color_attr (str): Optional, column attribute with color values
-        valid_attr (str): Optional, column attribute specifying cells to include
+        valid_ca (str): Optional, column attribute specifying cells to include
         highlight (str/list): Optional, categories to plot
 
     Returns:
         df_plot (dataframe): Contains categories and values for plotting
     """
     col_idx = loom_utils.get_attr_index(loom_file=loom_file,
-                                        attr=valid_attr,
+                                        attr=valid_ca,
                                         columns=True,
                                         as_bool=False,
                                         inverse=False)

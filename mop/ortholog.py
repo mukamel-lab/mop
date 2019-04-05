@@ -28,7 +28,7 @@ def add_ortholog(loom_file,
         out_id='Ortholog_Accession',
         out_valid='Valid_Orthologs',
         feature_id='Accession',
-        valid_attr=None,
+        valid_ra=None,
         fsep='\t',
         remove_version=False):
     """
@@ -46,7 +46,7 @@ def add_ortholog(loom_file,
         out_id (str): Output attribute for common_id in loom_file
         out_valid (str): Output attribute specifying valid out_id
         feature_id (str): Attribute specifying feature IDs in loom_file
-        valid_attr (str): Attribute specifying feature_id to include
+        valid_ra (str): Attribute specifying feature_id to include
         fsep (str): Delimiter for orthologs
             Follows pandas.read_table convention
         remove_version (bool): Remove GENCODE gene ID version from feature_id
@@ -62,7 +62,7 @@ def add_ortholog(loom_file,
     # Get feature IDs from loom_file
     valid_ids = imputation.prep_for_common(loom_file=loom_file,
             id_attr=feature_id,
-            valid_attr=valid_attr,
+            valid_attr=valid_ra,
             remove_version=remove_version)
     all_ids = imputation.prep_for_common(loom_file=loom_file,
             id_attr=feature_id,

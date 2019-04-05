@@ -20,8 +20,8 @@ stat_log = logging.getLogger(__name__)
 def batch_mean_and_std(loom_file,
                        layer,
                        axis=None,
-                       col_attr=None,
-                       row_attr=None,
+                       valid_ca=None,
+                       valid_ra=None,
                        batch_size=512,
                        verbose=False):
     """
@@ -34,8 +34,8 @@ def batch_mean_and_std(loom_file,
             None: values are for entire layer
             0: Statistics are for cells (will read all cells into memory)
             1: Statistics are for features (will read all features into memory)
-        col_attr (str): Optional, only use cells specified by col_attr
-        row_attr (str): Optional, only use features specified by row_attr
+        valid_ca (str): Optional, only use cells specified by valid_ca
+        valid_ra (str): Optional, only use features specified by valid_ra
         batch_size (int): Number of elements per chunk
             If axis is None, chunks are number of cells
             If axis == 0, chunks are number of features
@@ -76,12 +76,12 @@ def batch_mean_and_std(loom_file,
                                             batch_size=batch_size):
             # Parse data
             dat = view.layers[layer][:, :]
-            if col_attr:
-                col_idx = view.ca[col_attr].astype(bool)
+            if valid_ca:
+                col_idx = view.ca[valid_ca].astype(bool)
             else:
                 col_idx = np.ones((view.shape[1],), dtype=bool)
-            if row_attr:
-                row_idx = view.ra[row_attr].astype(bool)
+            if valid_ra:
+                row_idx = view.ra[valid_ra].astype(bool)
             else:
                 row_idx = np.ones((view.shape[0],), dtype=bool)
             if not np.any(col_idx) or not np.any(row_idx):

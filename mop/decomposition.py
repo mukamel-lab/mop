@@ -25,8 +25,8 @@ decomp_log = logging.getLogger(__name__)
 def batch_pca(loom_file,
               layer,
               out_attr='PCA',
-              col_attr=None,
-              row_attr=None,
+              valid_ca=None,
+              valid_ra=None,
               scale_attr=None,
               n_pca=50,
               drop_first=False,
@@ -40,8 +40,8 @@ def batch_pca(loom_file,
         layer (str): Layer containing data for PCA
         out_attr (str): Name of PCA attribute
             Valid_{out_attr} will also be added to indicate used cells
-        col_attr (str): Optional, only use cells specified by col_attr
-        row_attr (str): Optional, only use features specified by row_attr
+        valid_ca (str): Optional, only use cells specified by valid_ca
+        valid_ra (str): Optional, only use features specified by valid_ra
         scale_attr (str): Optional, attribute specifying cell scaling factor
         n_pca (int): Number of components for PCA
         drop_first (bool): Drops first PC
@@ -68,11 +68,11 @@ def batch_pca(loom_file,
         n = ds.ca[out_attr].shape[0]
         # Get column and row indices
         col_idx = loom_utils.get_attr_index(loom_file=loom_file,
-                                            attr=col_attr,
+                                            attr=valid_ca,
                                             columns=True,
                                             inverse=False)
         row_idx = loom_utils.get_attr_index(loom_file=loom_file,
-                                            attr=row_attr,
+                                            attr=valid_ra,
                                             columns=False,
                                             inverse=False)
         # Fit model
@@ -105,8 +105,8 @@ def batch_pca(loom_file,
             mask = selection == np.arange(n)[:, None]
             ds.ca[out_attr] += mask.dot(dat)
         # Add to file
-        if col_attr:
-            ds.ca['Valid_{}'.format(out_attr)] = ds.ca[col_attr]
+        if valid_ca:
+            ds.ca['Valid_{}'.format(out_attr)] = ds.ca[valid_ca]
         else:
             ds.ca['Valid_{}'.format(out_attr)] = np.ones((ds.shape[1],),
                                                          dtype=int)
@@ -121,8 +121,8 @@ def batch_pca(loom_file,
 def batch_pca_contexts(loom_file,
                        layers,
                        out_attr='PCA',
-                       col_attrs=None,
-                       row_attrs=None,
+                       valid_cas=None,
+                       valid_ras=None,
                        scale_attrs=None,
                        n_pca=50,
                        drop_first=False,
@@ -137,8 +137,8 @@ def batch_pca_contexts(loom_file,
         layers (list): List of layers to include
         out_attr (str): Name of PCA attribute
             Valid_{out_attr} will be added to indicate used cells
-        col_attrs (list): List of attributes specifying cells to use
-        row_attrs (list): List of attributes specifying rows to use
+        valid_cas (list): List of attributes specifying cells to use
+        valid_ras (list): List of attributes specifying rows to use
         scale_attrs (list): Attributes specifying per cell scaling factors
         n_pca (int): Number of components for PCA
         drop_first (bool): Drops first PC
@@ -161,10 +161,10 @@ def batch_pca_contexts(loom_file,
     col_idx = dict()
     for i in range(len(layers)):
         layer_dict[i] = layers[i]
-        if isinstance(col_attrs, str):
-            col_dict[i] = col_attrs
-        elif isinstance(col_attrs, list):
-            col_dict[i] = col_attrs[i]
+        if isinstance(valid_cas, str):
+            col_dict[i] = valid_cas
+        elif isinstance(valid_cas, list):
+            col_dict[i] = valid_cas[i]
         else:
             col_dict[i] = None
         col_idx[i] = loom_utils.get_attr_index(loom_file=loom_file,
@@ -172,10 +172,10 @@ def batch_pca_contexts(loom_file,
                                                columns=True,
                                                as_bool=True,
                                                inverse=False)
-        if row_attrs is None:
+        if valid_ras is None:
             row_dict[i] = None
         else:
-            row_dict[i] = row_attrs[i]
+            row_dict[i] = valid_ras[i]
         row_idx[i] = loom_utils.get_attr_index(loom_file=loom_file,
                                                attr=row_dict[i],
                                                columns=False,
@@ -197,9 +197,9 @@ def batch_pca_contexts(loom_file,
                                                             layer=layer_dict[
                                                                 key],
                                                             axis=None,
-                                                            col_attr=col_dict[
+                                                            valid_ca=col_dict[
                                                                 key],
-                                                            row_attr=row_dict[
+                                                            valid_ra=row_dict[
                                                                 key],
                                                             batch_size=batch_size,
                                                             verbose=verbose)
@@ -257,7 +257,7 @@ def run_tsne(loom_file,
              valid_attr=None,
              gen_pca=False,
              pca_attr=None,
-             row_attr=None,
+             valid_ra=None,
              scale_attr=None,
              n_pca=50,
              drop_first=False,
@@ -283,7 +283,7 @@ def run_tsne(loom_file,
         gen_pca (bool): If true, generates PCA
         pca_attr (str): Attribute containing PCs (optional)
             If not provided, added to loom_file under attribute PCA
-        row_attr (str): Attribute specifying features to include
+        valid_ra (str): Attribute specifying features to include
         layer (str): Layer in loom file containing data for PCA
         scale_attr (str): Optional, attribute specifying cell scaling factor
         n_pca (int): Number of components for PCA
@@ -318,8 +318,8 @@ def run_tsne(loom_file,
             batch_pca(loom_file=loom_file,
                       layer=layer,
                       out_attr=pca_attr,
-                      col_attr=valid_attr,
-                      row_attr=row_attr,
+                      valid_ca=valid_attr,
+                      valid_ra=valid_ra,
                       scale_attr=scale_attr,
                       n_pca=n_pca,
                       drop_first=drop_first,
@@ -379,7 +379,7 @@ def run_umap(loom_file,
              valid_attr=None,
              gen_pca=False,
              pca_attr=None,
-             row_attr=None,
+             valid_ra=None,
              scale_attr=None,
              n_pca=50,
              drop_first=False,
@@ -404,7 +404,7 @@ def run_umap(loom_file,
         gen_pca (bool): If true, generates PCA
         pca_attr (str): Attribute containing PCs (optional)
             If not provided, added to loom_file under attribute PCA
-        row_attr (str): Attribute specifying features to include
+        valid_ra (str): Attribute specifying features to include
         layer (str): Layer in loom file containing data for PCA
         scale_attr (str): Optional, attribute specifying cell scaling factor
         n_pca (int): Number of components for PCA
@@ -439,8 +439,8 @@ def run_umap(loom_file,
             batch_pca(loom_file=loom_file,
                       layer=layer,
                       out_attr=pca_attr,
-                      col_attr=valid_attr,
-                      row_attr=row_attr,
+                      valid_ca=valid_attr,
+                      valid_ra=valid_ra,
                       scale_attr=scale_attr,
                       n_pca=n_pca,
                       drop_first=drop_first,

@@ -27,7 +27,7 @@ def scatter_cell(loom_file,
                  y_axis,
                  plot_attr,
                  color_attr=None,
-                 valid_attr=None,
+                 valid_ca=None,
                  highlight=None,
                  s=2,
                  downsample_number=None,
@@ -55,7 +55,7 @@ def scatter_cell(loom_file,
         y_axis (str): Attribute in loom_file specifying y-coordinates
         plot_attr (str): Column attribute specifying basis of plotting
         color_attr (str): Optional, attribute specifying per cell colors
-        valid_attr (str): Optional, attribute specifying cells to include
+        valid_ca (str): Optional, attribute specifying cells to include
         highlight (str/list): Optional, only specified clusters will be colored
         s (int): Size of points on scatter plot
         downsample_number (int): Number to downsample to
@@ -81,7 +81,7 @@ def scatter_cell(loom_file,
     """
     # Get indices
     col_idx = loom_utils.get_attr_index(loom_file=loom_file,
-                                        attr=valid_attr,
+                                        attr=valid_ca,
                                         columns=True,
                                         as_bool=False,
                                         inverse=False)
@@ -170,7 +170,7 @@ def scatter_feature(loom_file,
                     feat_attr='Accession',
                     scale_attr=None,
                     clust_attr=None,
-                    valid_attr=None,
+                    valid_ca=None,
                     highlight=None,
                     s=2,
                     downsample=None,
@@ -202,7 +202,7 @@ def scatter_feature(loom_file,
         scale_attr (str): Name of attribute to scale counts by
         clust_attr (str): Name of attribute containing cluster identities
             Used with downsample
-        valid_attr (str): Optional, attribute specifying cells to include
+        valid_ca (str): Optional, attribute specifying cells to include
         highlight (str/list): Optional, only specified clusters will be colored
         s (int): Size of points on scatter plot
         downsample (int): Number of cells to downsample to
@@ -228,7 +228,7 @@ def scatter_feature(loom_file,
     Adapted from code by Fangming Xie
     """
     col_idx = loom_utils.get_attr_index(loom_file=loom_file,
-                                        attr=valid_attr,
+                                        attr=valid_ca,
                                         columns=True,
                                         as_bool=False,
                                         inverse=False)
@@ -353,7 +353,7 @@ def sankey(loom_file,
            left_color=None,
            right_color=None,
            line_color=None,
-           valid_attr=None,
+           valid_ca=None,
            left_label=None,
            right_label=None,
            title=None,
@@ -371,7 +371,7 @@ def sankey(loom_file,
         left_color (str): Optional, column attribute with left colors
         right_color (str): Optional, column attribute with right colors
         line_color (str): Optional, column attribute with line colors
-        valid_attr (str): Optional, column attribute specifying cells to include
+        valid_ca (str): Optional, column attribute specifying cells to include
         left_label (str): Label for left hand side of the plot
             If None, is set to left_attr
         right_label (str): Label for right hand side of the plot
@@ -394,7 +394,7 @@ def sankey(loom_file,
         right_label = right_attr
     # Make dataframe of data
     valid_idx = loom_utils.get_attr_index(loom_file=loom_file,
-                                          attr=valid_attr,
+                                          attr=valid_ca,
                                           columns=True,
                                           as_bool=True,
                                           inverse=False)
@@ -565,7 +565,7 @@ def confusion_matrix(loom_file,
                      column_attr,
                      normalize_by=None,
                      diagonalize=True,
-                     valid_attr=None,
+                     valid_ca=None,
                      row_label=None,
                      column_label=None,
                      title=None,
@@ -586,7 +586,7 @@ def confusion_matrix(loom_file,
             Rows can be indicated by rows or 0
             Columns can be indicated by columns or 1
         diagonalize (bool): Organize confusion matrix along diagonal
-        valid_attr (str): Attribute specifying cells to include
+        valid_ca (str): Attribute specifying cells to include
         row_label (str): Optional, label for x axis
         column_label (str): Optional, label for y axis
         title (str): Optional, title of plot
@@ -597,7 +597,7 @@ def confusion_matrix(loom_file,
         close (bool): Close figure after plotting
     """
     valid_idx = loom_utils.get_attr_index(loom_file=loom_file,
-                                          attr=valid_attr,
+                                          attr=valid_ca,
                                           columns=True,
                                           as_bool=True,
                                           inverse=False)
@@ -647,7 +647,7 @@ def boxplot_feature(loom_file,
                     feat_attr='Accession',
                     scale_attr=None,
                     color_attr=None,
-                    valid_attr=None,
+                    valid_ca=None,
                     highlight=None,
                     x_label=None,
                     y_label=None,
@@ -668,7 +668,7 @@ def boxplot_feature(loom_file,
         scale_attr (str): Optional, attribute specifying scale for values
             Useful for methylation data
         color_attr (str): Optional, column attribute with color values
-        valid_attr (str): Optional, column attribute specifying cells to include
+        valid_ca (str): Optional, column attribute specifying cells to include
         highlight (str/list): Optional, categories to plot
         x_label (str): Optional, label for x-axis
         y_label (str): Optional, label for y-axis
@@ -687,7 +687,7 @@ def boxplot_feature(loom_file,
                                    feat_attr=feat_attr,
                                    scale_attr=scale_attr,
                                    color_attr=color_attr,
-                                   valid_attr=valid_attr,
+                                   valid_ca=valid_ca,
                                    highlight=highlight)
     if color_attr is None:
         color_attr = 'color'
@@ -714,7 +714,7 @@ def violinplot_feature(loom_file,
                        feat_attr='Accession',
                        scale_attr=None,
                        color_attr=None,
-                       valid_attr=None,
+                       valid_ca=None,
                        highlight=None,
                        x_label=None,
                        y_label=None,
@@ -735,7 +735,7 @@ def violinplot_feature(loom_file,
         scale_attr (str): Optional, attribute specifying scale for values
             Useful for methylation data
         color_attr (str): Optional, column attribute with color values
-        valid_attr (str): Optional, column attribute specifying cells to include
+        valid_ca (str): Optional, column attribute specifying cells to include
         highlight (str/list): Optional, categories to plot
         x_label (str): Optional, label for x-axis
         y_label (str): Optional, label for y-axis
@@ -754,7 +754,7 @@ def violinplot_feature(loom_file,
                                    feat_attr=feat_attr,
                                    scale_attr=scale_attr,
                                    color_attr=color_attr,
-                                   valid_attr=valid_attr,
+                                   valid_ca=valid_ca,
                                    highlight=highlight)
     if color_attr is None:
         color_attr = 'color'
@@ -778,7 +778,7 @@ def boxplot_cell(loom_file,
                  category_attr,
                  value_attr,
                  color_attr=None,
-                 valid_attr=None,
+                 valid_ca=None,
                  highlight=None,
                  x_label=None,
                  y_label=None,
@@ -795,7 +795,7 @@ def boxplot_cell(loom_file,
         category_attr (str): Name of column attribute for categories
         value_attr (str): Name of column attribute for values
         color_attr (str): Optional, column attribute with color values
-        valid_attr (str): Optional, column attribute specifying cells to include
+        valid_ca (str): Optional, column attribute specifying cells to include
         highlight (str/list): Optional, categories to plot
         x_label (str): Optional, label for x-axis
         y_label (str): Optional, label for y-axis
@@ -811,7 +811,7 @@ def boxplot_cell(loom_file,
                                        category_attr=category_attr,
                                        value_attr=value_attr,
                                        color_attr=color_attr,
-                                       valid_attr=valid_attr,
+                                       valid_ca=valid_ca,
                                        highlight=highlight)
     if color_attr is None:
         color_attr = 'color'
@@ -835,7 +835,7 @@ def violinplot_cell(loom_file,
                     category_attr,
                     value_attr,
                     color_attr=None,
-                    valid_attr=None,
+                    valid_ca=None,
                     highlight=None,
                     x_label=None,
                     y_label=None,
@@ -852,7 +852,7 @@ def violinplot_cell(loom_file,
         category_attr (str): Name of column attribute for categories
         value_attr (str): Name of column attribute for values
         color_attr (str): Optional, column attribute with color values
-        valid_attr (str): Optional, column attribute specifying cells to include
+        valid_ca (str): Optional, column attribute specifying cells to include
         highlight (str/list): Optional, categories to plot
         x_label (str): Optional, label for x-axis
         y_label (str): Optional, label for y-axis
@@ -868,7 +868,7 @@ def violinplot_cell(loom_file,
                                        category_attr=category_attr,
                                        value_attr=value_attr,
                                        color_attr=color_attr,
-                                       valid_attr=valid_attr,
+                                       valid_ca=valid_ca,
                                        highlight=highlight)
     if color_attr is None:
         color_attr = 'color'
@@ -892,7 +892,7 @@ def barplot_cell(loom_file,
                  category_attr,
                  value_attr,
                  color_attr=None,
-                 valid_attr=None,
+                 valid_ca=None,
                  highlight=None,
                  legend=False,
                  output=None,
@@ -909,7 +909,7 @@ def barplot_cell(loom_file,
         category_attr (str): Attribute containing values for x-axis
         value_attr (str): Attribute containing values for bar plot
         color_attr (str): Optional, attribute specifying per cell colors
-        valid_attr (str): Optional, attribute specifying cells to include
+        valid_ca (str): Optional, attribute specifying cells to include
         highlight (str/list): Optional, plot only specified category_attr values
         legend (bool): Includes legend with plot
         output (str): Optional, saves plot to a file
@@ -922,7 +922,7 @@ def barplot_cell(loom_file,
     """
     # Get indices
     col_idx = loom_utils.get_attr_index(loom_file=loom_file,
-                                        attr=valid_attr,
+                                        attr=valid_ca,
                                         columns=True,
                                         as_bool=False,
                                         inverse=False)
@@ -996,7 +996,7 @@ def dist_cell(loom_file,
               hist=False,
               kde=True,
               log_transform=None,
-              valid_attr=None,
+              valid_ca=None,
               output=None,
               x_label=None,
               y_label=None,
@@ -1022,7 +1022,7 @@ def dist_cell(loom_file,
                 log2
                 log10
                 log
-        valid_attr (str): Optional, valid cells to include
+        valid_ca (str): Optional, valid cells to include
         output (str): Optional, path to output figure
         x_label (str): Optional, label for x-axis
         y_label (str): Optional, label for y-axis
@@ -1035,7 +1035,7 @@ def dist_cell(loom_file,
     """
     # Get indices
     col_idx = loom_utils.get_attr_index(loom_file=loom_file,
-                                        attr=valid_attr,
+                                        attr=valid_ca,
                                         columns=True,
                                         as_bool=False,
                                         inverse=False)
