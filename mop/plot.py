@@ -21,7 +21,7 @@ from . import plot_helpers as ph
 plot_log = logging.getLogger(__name__)
 
 
-def scatter_attr(loom_file,
+def scatter_cell(loom_file,
                  x_axis,
                  y_axis,
                  plot_attr,
@@ -189,7 +189,7 @@ def scatter_feature(loom_file,
                     close=False,
                     **kwargs):
     """
-    Plots scatter of cells in which each cluster is marked with a unique color
+    Plots scatter of features
     
     Args:
         loom_file (str): Path to loom file
@@ -773,7 +773,7 @@ def violinplot_feature(loom_file,
                       close=close)
 
 
-def boxplot_attr(loom_file,
+def boxplot_cell(loom_file,
                  category_attr,
                  value_attr,
                  color_attr=None,
@@ -830,7 +830,7 @@ def boxplot_attr(loom_file,
                       close=close)
 
 
-def violinplot_attr(loom_file,
+def violinplot_cell(loom_file,
                     category_attr,
                     value_attr,
                     color_attr=None,
@@ -887,7 +887,7 @@ def violinplot_attr(loom_file,
                       close=close)
 
 
-def barplot_attr(loom_file,
+def barplot_cell(loom_file,
                  category_attr,
                  value_attr,
                  color_attr=None,
