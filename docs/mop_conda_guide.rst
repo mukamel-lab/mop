@@ -26,5 +26,6 @@ To install the necessary packages for MoP, please run the following lines of cod
     pip install annoy
     pip install cmake
     pip install MulticoreTSNE
+    pip install loompy
 
 
