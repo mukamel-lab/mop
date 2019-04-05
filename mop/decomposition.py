@@ -374,7 +374,7 @@ def run_tsne(loom_file,
 
 
 def run_umap(loom_file,
-             cell_attr,
+             cell_attr='CellID',
              out_attr='umap',
              valid_ca=None,
              gen_pca=False,
