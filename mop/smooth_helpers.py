@@ -35,7 +35,7 @@ def compute_markov(loom_file,
                    neighbor_attr,
                    distance_attr,
                    out_graph,
-                   valid_attr=None,
+                   valid_ca=None,
                    k=30,
                    ka=4,
                    epsilon=1,
@@ -49,7 +49,7 @@ def compute_markov(loom_file,
         neighbor_attr (str): Name of attribute containing kNN indices
         distance_attr (str): Name of attribute containing kNN distances
         out_graph (str): Name of output graph containing Markov matrix
-        valid_attr (str): Name of attribute specifying valid cells
+        valid_ca (str): Name of attribute specifying valid cells
         k (int): Number of nearest neighbors
         ka (int): Normalize by this distance neighbor
         epsilon (int): Variance parameter
@@ -62,7 +62,7 @@ def compute_markov(loom_file,
         param_msg = 'Parameters: k = {0}, ka = {1}, epsilon = {2}, p = {3}'
         sh_log.info(param_msg.format(k, ka, epsilon, p))
     valid_idx = loom_utils.get_attr_index(loom_file=loom_file,
-                                          attr=valid_attr,
+                                          attr=valid_ca,
                                           columns=True,
                                           as_bool=True,
                                           inverse=False)

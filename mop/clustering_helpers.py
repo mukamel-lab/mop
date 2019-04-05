@@ -24,7 +24,7 @@ def clustering_from_graph(loom_file,
                           graph_attr,
                           clust_attr='ClusterID',
                           cell_attr='CellID',
-                          valid_attr=None,
+                          valid_ca=None,
                           directed=True,
                           seed=23,
                           verbose=False):
@@ -36,7 +36,7 @@ def clustering_from_graph(loom_file,
         graph_attr (str): Name of col_graphs object in loom_file containing kNN
         clust_attr (str): Name of attribute specifying clusters
         cell_attr (str): Name of attribute containing cell identifiers
-        valid_attr (str): Name of attribute specifying cells to use
+        valid_ca (str): Name of attribute specifying cells to use
         directed (bool): If true, graph should be directed
         seed (int): Seed for random processes
         verbose (bool): If true, print logging messages
@@ -47,7 +47,7 @@ def clustering_from_graph(loom_file,
     Adapted from code written by Fangming Xie
     """
     col_idx = loom_utils.get_attr_index(loom_file=loom_file,
-                                        attr=valid_attr,
+                                        attr=valid_ca,
                                         columns=True,
                                         as_bool=False,
                                         inverse=False)
@@ -89,8 +89,8 @@ def clustering_from_graph(loom_file,
         labels = pd.DataFrame(np.repeat('Fake', ds.shape[1]),
                               index=ds.ca[cell_attr],
                               columns=['Orig'])
-        if valid_attr:
-            valid_idx = ds.ca[valid_attr].astype(bool)
+        if valid_ca:
+            valid_idx = ds.ca[valid_ca].astype(bool)
         else:
             valid_idx = np.ones((ds.shape[1],), dtype=bool)
         clusts = pd.DataFrame(clusts,

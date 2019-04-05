@@ -254,7 +254,7 @@ def batch_pca_contexts(loom_file,
 def run_tsne(loom_file,
              cell_attr,
              out_attr='tsne',
-             valid_attr=None,
+             valid_ca=None,
              gen_pca=False,
              pca_attr=None,
              valid_ra=None,
@@ -279,7 +279,7 @@ def run_tsne(loom_file,
         out_attr (str): Attribute for output tSNE data
             coordinates will be saved as {out_attr}_x, {out_attr}_y
             valid coordinates (from QC) will be saved as Valid_{out_attr}
-        valid_attr (str): Attribute specifying cells to include
+        valid_ca (str): Attribute specifying cells to include
         gen_pca (bool): If true, generates PCA
         pca_attr (str): Attribute containing PCs (optional)
             If not provided, added to loom_file under attribute PCA
@@ -306,7 +306,7 @@ def run_tsne(loom_file,
             decomp_log.error(err_msg)
         raise ValueError(err_msg)
     valid_idx = loom_utils.get_attr_index(loom_file=loom_file,
-                                          attr=valid_attr,
+                                          attr=valid_ca,
                                           columns=True,
                                           as_bool=False,
                                           inverse=False)
@@ -318,7 +318,7 @@ def run_tsne(loom_file,
             batch_pca(loom_file=loom_file,
                       layer=layer,
                       out_attr=pca_attr,
-                      valid_ca=valid_attr,
+                      valid_ca=valid_ca,
                       valid_ra=valid_ra,
                       scale_attr=scale_attr,
                       n_pca=n_pca,
@@ -376,7 +376,7 @@ def run_tsne(loom_file,
 def run_umap(loom_file,
              cell_attr,
              out_attr='umap',
-             valid_attr=None,
+             valid_ca=None,
              gen_pca=False,
              pca_attr=None,
              valid_ra=None,
@@ -400,7 +400,7 @@ def run_umap(loom_file,
         out_attr (str): Attribute for output tSNE data
             coordinates will be saved as {out_attr}_x, {out_attr}_y
             valid coordinates (from QC) will be saved as Valid_{out_attr}
-        valid_attr (str): Attribute specifying cells to include
+        valid_ca (str): Attribute specifying cells to include
         gen_pca (bool): If true, generates PCA
         pca_attr (str): Attribute containing PCs (optional)
             If not provided, added to loom_file under attribute PCA
@@ -427,7 +427,7 @@ def run_umap(loom_file,
             decomp_log.error(err_msg)
         raise ValueError(err_msg)
     valid_idx = loom_utils.get_attr_index(loom_file=loom_file,
-                                          attr=valid_attr,
+                                          attr=valid_ca,
                                           columns=True,
                                           as_bool=False,
                                           inverse=False)
@@ -439,7 +439,7 @@ def run_umap(loom_file,
             batch_pca(loom_file=loom_file,
                       layer=layer,
                       out_attr=pca_attr,
-                      valid_ca=valid_attr,
+                      valid_ca=valid_ca,
                       valid_ra=valid_ra,
                       scale_attr=scale_attr,
                       n_pca=n_pca,
