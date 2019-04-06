@@ -45,6 +45,8 @@ def scatter_cell(loom_file,
                  high_p=99,
                  figsize=(8, 6),
                  close=False,
+                 fig=None,
+                 ax=None,
                  **kwargs):
     """
     Plots scatter of cells in which each cluster is marked with a unique color
@@ -75,6 +77,8 @@ def scatter_cell(loom_file,
         high_p (int): High end for percentile normalization (0-100)
         figsize (tuple): Size of scatter plot figure
         close (bool): If true, closes figure
+        fig (object): Add plot to specified figure
+        ax (object): Add plot to specified axis
         **kwargs: keyword arguments for matplotlib's scatter
     
     Adapted from code by Fangming Xie
@@ -141,6 +145,10 @@ def scatter_cell(loom_file,
         highlight = True
     else:
         highlight = False
+    # Set-up plot
+    fig, ax = ph.initialize_plot(fig=fig,
+                                 ax=ax,
+                                 figsize=figsize)
     # Make figure
     ph.plot_scatter(df_plot=df_plot,
                     x_axis='x_val',
@@ -159,6 +167,8 @@ def scatter_cell(loom_file,
                     title=title,
                     figsize=figsize,
                     close=close,
+                    fig=fig,
+                    ax=ax,
                     **kwargs)
 
 
@@ -188,6 +198,8 @@ def scatter_feature(loom_file,
                     coverage_layer=None,
                     figsize=(8, 6),
                     close=False,
+                    fig=None,
+                    ax=None,
                     **kwargs):
     """
     Plots scatter of features
@@ -223,6 +235,8 @@ def scatter_feature(loom_file,
         coverage_layer (str): Layer used to identify covered features
         figsize (tuple): Size of scatter plot figure
         close (bool): Do not plot figure inline
+        fig (object): Add plot to specified figure
+        ax (object): Add plot to specified axis
         **kwargs: keyword arguments for matplotlib's scatter
     
     Adapted from code by Fangming Xie
@@ -294,11 +308,14 @@ def scatter_feature(loom_file,
                               columns=['idx'])
         hl_idx = hl_idx.loc[highlight]
         df_plot = df_plot.iloc[hl_idx['idx'].values]
+    # Set-up plot
+    fig, ax = ph.initialize_plot(fig=fig,
+                                 ax=ax,
+                                 figsize=figsize)
     # Make figure
     if add_gray:
         df_noncov = df_plot.copy()
         df_noncov['color'] = np.repeat('lightgray', df_noncov.shape[0])
-        fig, ax = plt.subplots(figsize=figsize)
         ph.plot_scatter(df_plot=df_noncov,
                         x_axis='x_val',
                         y_axis='y_val',
@@ -344,6 +361,8 @@ def scatter_feature(loom_file,
                         figsize=figsize,
                         cbar_label=cbar_label,
                         close=close,
+                        fig=fig,
+                        ax=ax,
                         **kwargs)
 
 
@@ -359,7 +378,9 @@ def sankey(loom_file,
            title=None,
            figsize=(8, 6),
            output=None,
-           close=False):
+           close=False,
+           fig=None,
+           ax=None):
     """
     Generates Sankey (river) plots between two attributes
         Typically two different types of clustering
@@ -380,6 +401,9 @@ def sankey(loom_file,
         figsize (tuple): Size of outputput figure
         output (str): Optional, output file name
         close (bool): Optional, close figure after generating
+        fig (object): Add plot to specified figure
+        ax (object): Add plot to specified axis
+
     Adapted from pysankey by:
         Anneya Golob
         marcomanz
@@ -483,7 +507,9 @@ def sankey(loom_file,
             line_col = line_col[~line_col.index.duplicated(keep='first')]
             line_col = line_col.loc[l_labels[::-1]]
     # Make plot
-    fig, ax = plt.subplots(figsize=figsize)
+    fig, ax = ph.initialize_plot(fig=fig,
+                                 ax=ax,
+                                 figsize=figsize)
     for l_label in l_labels:
         bottom_pos = left_width[l_label]['bottom']
         left_pos = left_width[l_label]['left']
@@ -573,7 +599,9 @@ def confusion_matrix(loom_file,
                      cbar_label=None,
                      figsize=(8, 6),
                      output=None,
-                     close=False):
+                     close=False,
+                     fig=None,
+                     ax=None):
     """
     Plots a confusion matrix between two attributes
         Typically used to compare two differnet cluster assignments
@@ -595,6 +623,8 @@ def confusion_matrix(loom_file,
         figsize (tuple): Size of output figure
         output (str): Optional, name of output file
         close (bool): Close figure after plotting
+        fig (object): Add plot to specified figure
+        ax (object): Add plot to specified axis
     """
     valid_idx = loom_utils.get_attr_index(loom_file=loom_file,
                                           attr=valid_ca,
@@ -609,9 +639,14 @@ def confusion_matrix(loom_file,
                                      col_vals=col_vals,
                                      normalize_by=normalize_by,
                                      diagonalize=diagonalize)
-    fig, ax = plt.subplots(figsize=figsize)
+    # Set-up plot
+    fig, ax = ph.initialize_plot(fig=fig,
+                                 ax=ax,
+                                 figsize=figsize)
+    # Make plot
     im = ax.imshow(confusion.values,
                    cmap=cmap)
+    # Modify plot
     ax.set_xticks(np.arange(confusion.shape[1]))
     ax.set_xticklabels(confusion.columns.values)
     plt.setp(ax.get_xticklabels(),
@@ -655,7 +690,9 @@ def boxplot_feature(loom_file,
                     legend=False,
                     output=None,
                     figsize=(8, 6),
-                    close=False):
+                    close=False,
+                    fig=None,
+                    ax=None):
     """
     Makes a boxplot of a feature's counts
 
@@ -677,6 +714,8 @@ def boxplot_feature(loom_file,
         output (str): Optional, saves figure to this file path
         figsize (tuple): Size of scatter plot figure
         close (bool): If true, closes matplotlib figure
+        fig (object): Add plot to specified figure
+        ax (object): Add plot to specified axis
 
     """
     # Get categorical dataframe
@@ -704,7 +743,9 @@ def boxplot_feature(loom_file,
                       legend=legend,
                       output=output,
                       figsize=figsize,
-                      close=close)
+                      close=close,
+                      fig=fig,
+                      ax=ax)
 
 
 def violinplot_feature(loom_file,
@@ -722,7 +763,9 @@ def violinplot_feature(loom_file,
                        legend=False,
                        output=None,
                        figsize=(8, 6),
-                       close=False):
+                       close=False,
+                       fig=None,
+                       ax=None):
     """
     Makes a violin plot of a feature's counts
 
@@ -744,6 +787,8 @@ def violinplot_feature(loom_file,
         output (str): Optional, saves figure to this file path
         figsize (tuple): Size of scatter plot figure
         close (bool): If true, closes matplotlib figure
+        fig (object): Add plot to specified figure
+        ax (object): Add plot to specified axis
 
     """
     # Get categorical dataframe
@@ -771,7 +816,9 @@ def violinplot_feature(loom_file,
                       legend=legend,
                       output=output,
                       figsize=figsize,
-                      close=close)
+                      close=close,
+                      fig=fig,
+                      ax=ax)
 
 
 def boxplot_cell(loom_file,
@@ -786,7 +833,9 @@ def boxplot_cell(loom_file,
                  legend=False,
                  output=None,
                  figsize=(8, 6),
-                 close=False):
+                 close=False,
+                 fig=None,
+                 ax=None):
     """
     Makes a boxplot of a column attribute
 
@@ -804,6 +853,8 @@ def boxplot_cell(loom_file,
         output (str): Optional, saves figure to this file path
         figsize (tuple): Size of scatter plot figure
         close (bool): If true, closes matplotlib figure
+        fig (object): Add plot to specified figure
+        ax (object): Add plot to specified axis
 
     """
     # Get categorical dataframe
@@ -828,7 +879,9 @@ def boxplot_cell(loom_file,
                       legend=legend,
                       output=output,
                       figsize=figsize,
-                      close=close)
+                      close=close,
+                      fig=fig,
+                      ax=ax)
 
 
 def violinplot_cell(loom_file,
@@ -843,7 +896,9 @@ def violinplot_cell(loom_file,
                     legend=False,
                     output=None,
                     figsize=(8, 6),
-                    close=False):
+                    close=False,
+                    fig=None,
+                    ax=None):
     """
     Makes a violin plot of a column attribute
 
@@ -861,6 +916,8 @@ def violinplot_cell(loom_file,
         output (str): Optional, saves figure to this file path
         figsize (tuple): Size of scatter plot figure
         close (bool): If true, closes matplotlib figure
+        fig (object): Add plot to specified figure
+        ax (object): Add plot to specified axis
 
     """
     # Get categorical dataframe
@@ -885,7 +942,9 @@ def violinplot_cell(loom_file,
                       legend=legend,
                       output=output,
                       figsize=figsize,
-                      close=close)
+                      close=close,
+                      fig=fig,
+                      ax=ax)
 
 
 def barplot_cell(loom_file,
@@ -900,7 +959,9 @@ def barplot_cell(loom_file,
                  y_label=None,
                  title=None,
                  figsize=(8, 6),
-                 close=False):
+                 close=False,
+                 fig=None,
+                 ax=None):
     """
     Plots barplot of attribute data
 
@@ -918,6 +979,8 @@ def barplot_cell(loom_file,
         title (str): Optional, title for plot
         figsize (tuple): Size of scatter plot figure
         close (bool): If true, closes figure
+        fig (object): Add plot to specified figure
+        ax (object): Add plot to specified axis
 
     """
     # Get indices
@@ -951,7 +1014,9 @@ def barplot_cell(loom_file,
     color_df = df_plot[[value_attr, 'color']].drop_duplicates(keep='first')
     color_df = color_df.set_index([value_attr], drop=True)
     # Make plot
-    fig = plt.figure(figsize=figsize)
+    fig, ax = ph.initialize_plot(fig=fig,
+                                 ax=ax,
+                                 figsize=figsize)
     bottom_value = 0
     objs = []
     for value in color_df.index.values:

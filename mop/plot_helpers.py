@@ -291,6 +291,30 @@ def get_random_colors(n):
     return colors[:n]
 
 
+def initialize_plot(fig=None,
+                    ax=None,
+                    figsize=(8, 6)):
+    """
+    Initializes a plot if necessary
+
+    Args:
+        fig (object): Optional, figure object to plot on
+        ax (object): Optional, figure object to plot on
+        figsize (tuple): Size of figure to generate
+
+    Returns:
+        fig (object): Figure to plot on
+        ax (object): Figure to plot on
+    """
+    if ax is None and fig is None:
+        fig, ax = plt.subplots(figsize=figsize)
+    elif ax is None and fig is not None:
+        raise ValueError('Both ax and fig must be provided')
+    elif ax is not None and fig is None:
+        raise ValueError('Both ax and fig must be provided')
+    return fig, ax
+
+
 def find_limits(df_plot,
                 axis):
     """
@@ -631,7 +655,9 @@ def plot_boxviolin(df_plot,
                    legend=False,
                    output=None,
                    figsize=(8, 6),
-                   close=False):
+                   close=False,
+                   fig=None,
+                   ax=None):
     """
     Plots box plot data
 
@@ -651,13 +677,16 @@ def plot_boxviolin(df_plot,
         output (str): Optional, saves figure to this file path
         figsize (tuple): Size of scatter plot figure
         close (bool): If true, closes matplotlib figure
+        fig (object): Add plot to specified figure
+        ax (object): Add plot to specified axis
+
     """
     # Handle cat_order
     if cat_order is None:
         plot_order = general_utils.nat_sort(df_plot[category_label].unique())
-    elif isinstance(cat_order,str):
+    elif isinstance(cat_order, str):
         plot_order = [cat_order]
-    elif isinstance(cat_order,list):
+    elif isinstance(cat_order, list):
         plot_order = cat_order
     else:
         raise ValueError('cat_order must be  a list or string')
@@ -666,7 +695,9 @@ def plot_boxviolin(df_plot,
     df_legend = df_legend.drop_duplicates(keep='first')
     df_legend = df_legend.set_index(category_label, drop=True)
     df_legend = df_legend.loc[general_utils.nat_sort(df_legend.index.values)]
-    fig, ax = plt.subplots(figsize=figsize)
+    fig, ax = initialize_plot(fig=fig,
+                              ax=ax,
+                              figsize=figsize)
     if 'box' in plot_type.lower():
         sns.boxplot(x=category_label,
                     y=value_label,
