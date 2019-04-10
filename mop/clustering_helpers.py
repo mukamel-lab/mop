@@ -12,6 +12,7 @@ import numpy as np
 import time
 import logging
 import louvain
+import leidenalg
 from . import neighbors
 from . import loom_utils
 from . import general_utils
@@ -22,6 +23,7 @@ ch_log = logging.getLogger(__name__)
 
 def clustering_from_graph(loom_file,
                           graph_attr,
+                          leiden = True,
                           clust_attr='ClusterID',
                           cell_attr='CellID',
                           valid_ca=None,
@@ -75,7 +77,11 @@ def clustering_from_graph(loom_file,
         ch_log.info('Performing clustering with Louvain')
     if seed is not None:
         louvain.set_rng_seed(seed)
-    partition1 = louvain.find_partition(g,
+        
+    if leiden == True:
+        partition1 = leidenalg.find_partition(g, leidenalg.ModularityVertexPartition)
+    else: 
+        partition1 = louvain.find_partition(g,
                                         louvain.ModularityVertexPartition,
                                         weights=g.es['weight'])
     # Get cluster IDs
