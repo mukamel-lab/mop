@@ -16,13 +16,146 @@ from . import clustering_helpers as ch
 # Start log
 clust_log = logging.getLogger(__name__)
 
+def cluster_cells(loom_file,
+                    clust_attr='ClusterID',
+                    cell_attr='CellID',
+                    valid_ca=None,
+                    cluster_algorithm = "louvain",
+                    gen_pca=True,
+                    pca_attr='PCA',
+                    layer='',
+                    n_pca=50,
+                    drop_first=False,
+                    valid_ra=None,
+                    scale_attr=None,
+                    gen_knn=True,
+                    neighbor_attr='knn_indices',
+                    distance_attr='knn_distances',
+                    k=30,
+                    num_trees=50,
+                    metric='euclidean',
+                    gen_jaccard=True,
+                    jaccard_graph='jaccard_graph',
+                    batch_size=512,
+                    seed=23,
+                    verbose=False):
+    """
+    Performs Louvain or Leiden clustering on the Jaccard graph for a loom file
+    
+    Args:
+        loom_file (str): Path to loom file
+        clust_attr (str): Output attribute containing clusters
+            Convention is ClusterID
+        cell_attr (str): Attribute specifying cell IDs
+            Convention is CellID
+        valid_ca (str): Attribute specifying cells to include
+        cluster_algorithm (str): Specifies which clustering algorithm to use
+            values can be "louvain" or "leiden". Both algorithms are perfromed
+            through maximizing the modularity of the jacard weighted neighbor
+            graph
+        gen_pca (bool): If true, perform dimensionality reduction
+        pca_attr (str): Name of attribute containing PCs
+            If gen_pca, this is the name of the output attribute
+                Defaults to PCA
+        layer (str): Layer in loom file containing data for PCA
+        n_pca (int): Number of components for PCA (if pca_attr not provided)
+        drop_first (bool): Drops first PC
+            Useful if the first PC correlates with a technical feature
+            If true, a total of n_pca is still generated and added to loom_file
+            If true, the first principal component will be lost
+        valid_ra (str): Attribute specifying features to include
+            Only used if performing PCA 
+        scale_attr (str): Optional, attribute specifying cell scaling factor
+            Only used if performing PCA
+        gen_knn (bool): If true, generate kNN indices/distances
+        neighbor_attr (str): Attribute specifying neighbor indices
+            If gen_knn, this is the name of the output attribute
+            Defaults to k{k}_neighbors
+        distance_attr (str): Attribute specifying distances
+            If gen_knn, this is the name of the output attribute
+            Defaults to k{k}_distances
+        k (int): Number of nearest neighbors
+            Only used if generating kNN
+        num_trees (int): Number of trees for approximate kNN
+            Only used if generating kNN
+            Increased number leads to greater precision
+        metric (str): Metric for measuring distance (defaults from annoy)
+            Only used if generating kNN
+            angular, euclidean, manhattan, hamming, dot
+        gen_jaccard (bool): If true, generate Jaccard weighted adjacency matrix
+        jaccard_graph (str): Name of col_graphs containing adjacency matrix
+            If gen_jaccard, this is the name of the output graph
+            Default is Jaccard
+        batch_size (int): Number of elements per chunk (for PCA)
+        seed (int): Random seed for clustering
+        verbose (bool): If true, print logging statements
+    """
+    # Perform PCA
+    if  ~(algorithm == "louvain" or algorithm == "leiden"):
+        err_msg = "Only supported algorithms are louvain and leiden"
+        if verbose:
+            clust_log.error(err_msg)
+        raise ValueError(err_msg)
+    if gen_pca:
+        if pca_attr is None:
+            pca_attr = 'PCA'
+        decomposition.batch_pca(loom_file=loom_file,
+                                layer=layer,
+                                out_attr=pca_attr,
+                                valid_ca=valid_ca,
+                                valid_ra=valid_ra,
+                                scale_attr=scale_attr,
+                                n_pca=n_pca,
+                                drop_first=drop_first,
+                                batch_size=batch_size,
+                                verbose=verbose)
+    # Generate kNN
+    if gen_knn:
+        if neighbor_attr is None:
+            neighbor_attr = 'k{}_neighbors'.format(k)
+        if distance_attr is None:
+            distance_attr = 'k{}_distances'.format(k)
+        neighbors.generate_knn(loom_file=loom_file,
+                               dat_attr=pca_attr,
+                               valid_ca=valid_ca,
+                               neighbor_attr=neighbor_attr,
+                               distance_attr=distance_attr,
+                               k=k,
+                               num_trees=num_trees,
+                               metric=metric,
+                               batch_size=batch_size,
+                               verbose=verbose)
+
+    # Generate Jaccard-weighted adjacency
+    if gen_jaccard:
+        if jaccard_graph is None:
+            jaccard_graph = 'Jaccard'
+        neighbors.loom_adjacency(loom_file=loom_file,
+                                 neighbor_attr=neighbor_attr,
+                                 graph_attr=jaccard_graph,
+                                 weight=True,
+                                 normalize=False,
+                                 normalize_axis=None,
+                                 offset=None,
+                                 valid_ca=valid_ca,
+                                 batch_size=batch_size)
+    if clust_attr is None:
+        clust_attr = 'ClusterID'
+    ch.clustering_from_graph(loom_file=loom_file,
+                             algorithm = cluster_algorithm,
+                             graph_attr=jaccard_graph,
+                             clust_attr=clust_attr,
+                             cell_attr=cell_attr,
+                             valid_ca=valid_ca,
+                             directed=True,
+                             seed=seed,
+                             verbose=verbose)
 
 def louvain_jaccard(loom_file,
                     clust_attr='ClusterID',
                     cell_attr='CellID',
                     valid_ca=None,
                     gen_pca=True,
-                    leiden = True,
                     pca_attr='PCA',
                     layer='',
                     n_pca=50,
@@ -88,61 +221,29 @@ def louvain_jaccard(loom_file,
         seed (int): Random seed for clustering
         verbose (bool): If true, print logging statements
     """
-    # Perform PCA
-    if gen_pca:
-        if pca_attr is None:
-            pca_attr = 'PCA'
-        decomposition.batch_pca(loom_file=loom_file,
-                                layer=layer,
-                                out_attr=pca_attr,
-                                valid_ca=valid_ca,
-                                valid_ra=valid_ra,
-                                scale_attr=scale_attr,
-                                n_pca=n_pca,
-                                drop_first=drop_first,
-                                batch_size=batch_size,
-                                verbose=verbose)
-    # Generate kNN
-    if gen_knn:
-        if neighbor_attr is None:
-            neighbor_attr = 'k{}_neighbors'.format(k)
-        if distance_attr is None:
-            distance_attr = 'k{}_distances'.format(k)
-        neighbors.generate_knn(loom_file=loom_file,
-                               dat_attr=pca_attr,
-                               valid_ca=valid_ca,
-                               neighbor_attr=neighbor_attr,
-                               distance_attr=distance_attr,
-                               k=k,
-                               num_trees=num_trees,
-                               metric=metric,
-                               batch_size=batch_size,
-                               verbose=verbose)
-
-    # Generate Jaccard-weighted adjacency
-    if gen_jaccard:
-        if jaccard_graph is None:
-            jaccard_graph = 'Jaccard'
-        neighbors.loom_adjacency(loom_file=loom_file,
-                                 neighbor_attr=neighbor_attr,
-                                 graph_attr=jaccard_graph,
-                                 weight=True,
-                                 normalize=False,
-                                 normalize_axis=None,
-                                 offset=None,
-                                 valid_ca=valid_ca,
-                                 batch_size=batch_size)
-    if clust_attr is None:
-        clust_attr = 'ClusterID'
-    ch.clustering_from_graph(loom_file=loom_file,
-                             leiden = True,
-                             graph_attr=jaccard_graph,
-                             clust_attr=clust_attr,
-                             cell_attr=cell_attr,
-                             valid_ca=valid_ca,
-                             directed=True,
-                             seed=seed,
-                             verbose=verbose)
+    cluster_cells(loom_file,
+                    clust_attr= cluster_attr,
+                    cell_attr= cell_attr,
+                    valid_ca= valid_ca,
+                    cluster_algorithm = "louvain",
+                    gen_pca= gen_pca,
+                    pca_attr= pca_attr,
+                    layer= layer,
+                    n_pca= n_pca,
+                    drop_first=drop_first,
+                    valid_ra=valid_ra,
+                    scale_attr=scale_attr,
+                    gen_knn=gen_knn,
+                    neighbor_attr=neighbor_attr,
+                    distance_attr=distance_attr,
+                    k=k,
+                    num_trees=num_trees,
+                    metric=metrirc,
+                    gen_jaccard=gen_jaccard,
+                    jaccard_graph=jaccard_graph,
+                    batch_size=batch_size,
+                    seed=seed,
+                    verbose=verbose)
 
 def cluster_and_reduce(loom_file,
                        reduce_method='umap',
@@ -150,6 +251,7 @@ def cluster_and_reduce(loom_file,
                        reduce_attr='umap',
                        n_reduce=2,
                        cell_attr='CellID',
+                       cluster_algorithm = "louvain",
                        gen_pca=True,
                        pca_attr='PCA',
                        layer='',
@@ -185,6 +287,10 @@ def cluster_and_reduce(loom_file,
             Follows format of {reduced_attr}_{x,y,z}
         n_reduce (int): Number of components after reduce_method
         cell_attr (str): Name of attribute containing unique cell IDs
+        cluster_algorithm (str): Specifies which clustering algorithm to use
+            values can be "louvain" or "leiden". Both algorithms are perfromed
+            through maximizing the modularity of the jacard weighted neighbor
+            graph
         gen_pca (bool): Perform PCA before clustering and later reduction
         pca_attr (str): Name of column attribute containing PCs
         layer (str): Name of layer in loom_file containing data for PCA
@@ -243,10 +349,11 @@ def cluster_and_reduce(loom_file,
             clust_log.error(err_msg)
         raise ValueError(err_msg)
     # Perform clustering
-    louvain_jaccard(loom_file=loom_file,
+    ccluster_cells(loom_file=loom_file,
                     clust_attr=clust_attr,
                     cell_attr=cell_attr,
                     valid_ca=valid_ca,
+                    cluster_algorithm = cluster_algorithm,
                     gen_pca=gen_pca,
                     pca_attr=pca_attr,
                     layer=layer,
