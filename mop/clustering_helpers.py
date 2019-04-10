@@ -12,6 +12,7 @@ import numpy as np
 import time
 import logging
 import louvain
+import leidenalg
 from . import neighbors
 from . import loom_utils
 from . import general_utils
@@ -25,6 +26,7 @@ def clustering_from_graph(loom_file,
                           clust_attr='ClusterID',
                           cell_attr='CellID',
                           valid_ca=None,
+                          algorithm = "louvain",
                           directed=True,
                           seed=23,
                           verbose=False):
@@ -37,6 +39,10 @@ def clustering_from_graph(loom_file,
         clust_attr (str): Name of attribute specifying clusters
         cell_attr (str): Name of attribute containing cell identifiers
         valid_ca (str): Name of attribute specifying cells to use
+        algorithm (str): Specifies which clustering algorithm to use
+            values can be "louvain" or "leiden". Both algorithms are perfromed
+            through maximizing the modularity of the jacard weighted neighbor
+            graph
         directed (bool): If true, graph should be directed
         seed (int): Seed for random processes
         verbose (bool): If true, print logging messages
@@ -46,6 +52,11 @@ def clustering_from_graph(loom_file,
     
     Adapted from code written by Fangming Xie
     """
+    if (algorithm == "louvain") or (algorithm == "leiden") == False:
+        err_msg = "Only supported algorithms are louvain and leiden"
+        if verbose:
+            ch_log.error(err_msg)
+        raise ValueError(err_msg)
     col_idx = loom_utils.get_attr_index(loom_file=loom_file,
                                         attr=valid_ca,
                                         columns=True,
@@ -75,7 +86,11 @@ def clustering_from_graph(loom_file,
         ch_log.info('Performing clustering with Louvain')
     if seed is not None:
         louvain.set_rng_seed(seed)
-    partition1 = louvain.find_partition(g,
+        
+    if algorithm == "leiden":
+        partition1 = leidenalg.find_partition(g, leidenalg.ModularityVertexPartition)
+    else:
+        partition1 = louvain.find_partition(g,
                                         louvain.ModularityVertexPartition,
                                         weights=g.es['weight'])
     # Get cluster IDs
