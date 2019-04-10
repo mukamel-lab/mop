@@ -28,15 +28,16 @@ setup(
     packages=find_packages(exclude=('tests',)),
 
     install_requires=['annoy>=1.13.0',
-        'multicoretsne>=0.1',
-        'loompy>=2.0.16',
-        'louvain>=0.6.1',
-        'numpy>=1.15.4',
-        'pandas>=0.23.4',
-        'python-igraph>=0.7.1.post6',
-        'scikit-learn>=0.19.1',
-        'scipy>=1.1.0'
-        ],
+                      'multicoretsne>=0.1',
+                      'loompy>=2.0.16',
+                      'louvain>=0.6.1',
+                      'numpy>=1.15.4',
+                      'pandas>=0.23.4',
+                      'python-igraph>=0.7.1.post6',
+                      'scikit-learn>=0.19.1',
+                      'scipy>=1.1.0',
+                      'leidenalg>=0.7.0'
+                      ],
 
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',

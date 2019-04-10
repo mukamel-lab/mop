@@ -23,6 +23,7 @@ To install the necessary packages for MoP, please run the following lines of cod
     conda install louvain python-igraph
     conda install seaborn matplotlib
     conda install umap-learn
+    conda install leidenalg
     pip install annoy
     pip install cmake
     pip install MulticoreTSNE
