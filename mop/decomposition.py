@@ -62,6 +62,12 @@ def batch_pca(loom_file,
         n_tmp = n_pca + 1
     else:
         n_tmp = n_pca
+    # Check user's batch size
+    batch_size = dh.check_pca_batches(loom_file=loom_file,
+                                      n_pca=n_pca,
+                                      batch_size=batch_size,
+                                      verbose=verbose)
+    # Perform PCA
     pca = IncrementalPCA(n_components=n_tmp)
     with loompy.connect(loom_file) as ds:
         ds.ca[out_attr] = np.zeros((ds.shape[1], n_pca), dtype=float)
@@ -152,6 +158,11 @@ def batch_pca_contexts(loom_file,
     if verbose:
         decomp_log.info('Fitting PCA')
         t_start = time.time()
+    # Check user's batch size
+    batch_size = dh.check_pca_batches(loom_file=loom_file,
+                                      n_pca=n_pca,
+                                      batch_size=batch_size,
+                                      verbose=verbose)
     # Make dictionary of values
     layer_dict = dict()
     cell_dict = dict()

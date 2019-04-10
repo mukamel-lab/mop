@@ -6,10 +6,51 @@ Written by Wayne Doyle
 (C) 2018 Mukamel Lab GPLv2
 """
 import numpy as np
+import loompy
 import logging
 
 # Start log
 dh_log = logging.getLogger(__name__)
+
+
+def check_pca_batches(loom_file,
+                      n_pca=50,
+                      batch_size=512,
+                      verbose=False):
+    """
+    Checks and adjusts batch size for PCA
+
+    Args:
+        loom_file (str): Path to loom file
+        n_pca (int): Number of components for PCA
+        batch_size (int): Size of chunks
+        verbose (bool): Print logging messages
+
+    Returns:
+        batch_size (int): Updated batch size to work with PCA
+    """
+    # Get the number of cells
+    with loompy.connect(loom_file) as ds:
+        num_total = ds.shape[1]
+    # Check if batch_size and PCA are even reasonable
+    if num_total < n_pca:
+        dh_log.error('More PCA components {0} than samples {1}'.format(n_pca,
+                                                                       num_total))
+    if batch_size < n_pca:
+        batch_size = n_pca
+    # Adjust based on expected size
+    mod_total = num_total % batch_size
+    adjusted_batch = False
+    if mod_total < n_pca:
+        adjusted_batch = True
+        batch_size = batch_size - n_pca + mod_total
+    if batch_size < n_pca:
+        batch_size = num_total
+    # Report to user
+    if verbose and adjusted_batch:
+        dh_log.info('Adjusted batch size to {0} for PCA'.format(batch_size))
+    # Return value
+    return batch_size
 
 
 def prep_pca(view,
