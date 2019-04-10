@@ -26,7 +26,7 @@ def clustering_from_graph(loom_file,
                           clust_attr='ClusterID',
                           cell_attr='CellID',
                           valid_ca=None,
-                          algorithm = "louvain"
+                          algorithm = "louvain",
                           directed=True,
                           seed=23,
                           verbose=False):
@@ -52,7 +52,7 @@ def clustering_from_graph(loom_file,
     
     Adapted from code written by Fangming Xie
     """
-    if  ~(algorithm == "louvain" or algorithm == "leiden"):
+    if (algorithm == "louvain") or (algorithm == "leiden") == False:
         err_msg = "Only supported algorithms are louvain and leiden"
         if verbose:
             ch_log.error(err_msg)

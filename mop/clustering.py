@@ -91,7 +91,8 @@ def cluster_cells(loom_file,
         verbose (bool): If true, print logging statements
     """
     # Perform PCA
-    if  ~(algorithm == "louvain" or algorithm == "leiden"):
+    print((cluster_algorithm == "louvain") or (cluster_algorithm == "leiden"))
+    if (cluster_algorithm == "louvain") or (cluster_algorithm == "leiden") == False:
         err_msg = "Only supported algorithms are louvain and leiden"
         if verbose:
             clust_log.error(err_msg)
@@ -349,7 +350,7 @@ def cluster_and_reduce(loom_file,
             clust_log.error(err_msg)
         raise ValueError(err_msg)
     # Perform clustering
-    ccluster_cells(loom_file=loom_file,
+    cluster_cells(loom_file=loom_file,
                     clust_attr=clust_attr,
                     cell_attr=cell_attr,
                     valid_ca=valid_ca,
