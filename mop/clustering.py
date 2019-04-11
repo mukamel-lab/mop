@@ -21,7 +21,7 @@ def cluster_cells(loom_file,
                   clust_attr='ClusterID',
                   cell_attr='CellID',
                   valid_ca=None,
-                  cluster_algorithm="louvain",
+                  cluster_algorithm='louvain',
                   gen_pca=True,
                   pca_attr='PCA',
                   layer='',
@@ -51,7 +51,7 @@ def cluster_cells(loom_file,
             Convention is CellID
         valid_ca (str): Attribute specifying cells to include
         cluster_algorithm (str): Specifies which clustering algorithm to use
-            values can be "louvain" or "leiden". Both algorithms are perfromed
+            values can be louvain or leiden. Both algorithms are performed
             through maximizing the modularity of the jacard weighted neighbor
             graph
         gen_pca (bool): If true, perform dimensionality reduction
@@ -92,10 +92,10 @@ def cluster_cells(loom_file,
         verbose (bool): If true, print logging statements
     """
     # Perform PCA
-    print((cluster_algorithm == "louvain") or (cluster_algorithm == "leiden"))
-    if (cluster_algorithm == "louvain") or \
-            (cluster_algorithm == "leiden") is False:
-        err_msg = "Only supported algorithms are louvain and leiden"
+    if cluster_algorithm in ['louvain', 'leiden']:
+        pass
+    else:
+        err_msg = 'Only supported algorithms are louvain and leiden'
         if verbose:
             clust_log.error(err_msg)
         raise ValueError(err_msg)
@@ -229,7 +229,7 @@ def louvain_jaccard(loom_file,
                   clust_attr=clust_attr,
                   cell_attr=cell_attr,
                   valid_ca=valid_ca,
-                  cluster_algorithm="louvain",
+                  cluster_algorithm='louvain',
                   gen_pca=gen_pca,
                   pca_attr=pca_attr,
                   layer=layer,
@@ -255,7 +255,7 @@ def cluster_and_reduce(loom_file,
                        reduce_attr='umap',
                        n_reduce=2,
                        cell_attr='CellID',
-                       cluster_algorithm="louvain",
+                       cluster_algorithm='louvain',
                        gen_pca=True,
                        pca_attr='PCA',
                        layer='',
@@ -292,7 +292,7 @@ def cluster_and_reduce(loom_file,
         n_reduce (int): Number of components after reduce_method
         cell_attr (str): Name of attribute containing unique cell IDs
         cluster_algorithm (str): Specifies which clustering algorithm to use
-            values can be "louvain" or "leiden". Both algorithms are perfromed
+            values can be louvain or leiden. Both algorithms are performed
             through maximizing the modularity of the jacard weighted neighbor
             graph
         gen_pca (bool): Perform PCA before clustering and later reduction
