@@ -121,6 +121,14 @@ def batch_mean_and_std(loom_file,
     my_mean = old_mean
     my_std = old_std
     # Restrict to valid cells/features
+    col_idx = loom_utils.get_attr_index(loom_file=loom_file,
+                                        attr=valid_ca,
+                                        columns=True,
+                                        inverse=False)
+    row_idx = loom_utils.get_attr_index(loom_file=loom_file,
+                                        attr=valid_ra,
+                                        columns=False,
+                                        inverse=False)
     if axis == 0:
         my_mean = my_mean[col_idx]
         my_std = my_std[col_idx]
