@@ -26,7 +26,7 @@ def batch_mean_and_std(loom_file,
                        verbose=False):
     """
     Batch calculates mean and standard deviation
-    
+
     Args:
         loom_file (str): Path to loom file containing mC/C counts
         layer (str): Layer containing mC/C counts
@@ -41,18 +41,18 @@ def batch_mean_and_std(loom_file,
             If axis == 0, chunks are number of features
             If axis == 1, chunks are number of cells
         verbose (boolean): If true, print helpful progress messages
-    
+
     Returns:
         mean (float): Mean value for specified layer
-        std (float): Standard deviation valeu for specified layer
-        
+        std (float): Standard deviation value for specified layer
+
     Assumptions:
         (row/col)_attr specifies a boolean array attribute
-    
+
     To Do:
         Make axis selection consistent across all functions
-        
-    Based on code from: 
+
+    Based on code from:
         http://notmatthancock.github.io/2017/03/23/simple-batch-stat-updates.html
     """
     # Set defaults
@@ -117,14 +117,64 @@ def batch_mean_and_std(loom_file,
                 old_mean = upd_mean
                 old_std = upd_std
                 old_obs = upd_obs
-
-    mean = old_mean
-    std = old_std
-    if mean is None:
+    # Set values
+    my_mean = old_mean
+    my_std = old_std
+    # Restrict
+    if axis == 0:
+        my_mean = my_mean[col_idx]
+        my_std = my_std[col_idx]
+    elif axis == 1:
+        my_mean = my_mean[row_idx]
+        my_std = my_std[row_idx]
+    if my_mean is None:
         raise ValueError('Could not calculate statistics')
     if verbose:
         t1 = time.time()
         time_run, time_fmt = general_utils.format_run_time(t0, t1)
         stat_log.info(
             'Calculated statistics in {0:.2f} {1}'.format(time_run, time_fmt))
-    return [mean, std]
+    return [my_mean, my_std]
+
+
+def batch_mean_and_var(loom_file,
+                       layer,
+                       axis=None,
+                       valid_ca=None,
+                       valid_ra=None,
+                       batch_size=512,
+                       verbose=False):
+    """
+    Batch calculates mean and variance
+
+    Args:
+        loom_file (str): Path to loom file containing mC/C counts
+        layer (str): Layer containing mC/C counts
+        axis (int): Axis to calculate mean and standard deviation
+            None: values are for entire layer
+            0: Statistics are for cells (will read all cells into memory)
+            1: Statistics are for features (will read all features into memory)
+        valid_ca (str): Optional, only use cells specified by valid_ca
+        valid_ra (str): Optional, only use features specified by valid_ra
+        batch_size (int): Number of elements per chunk
+            If axis is None, chunks are number of cells
+            If axis == 0, chunks are number of features
+            If axis == 1, chunks are number of cells
+        verbose (boolean): If true, print helpful progress messages
+
+    Returns:
+        mean (float): Mean value for specified layer
+        var (float): Standard deviation value for specified layer
+
+    Assumptions:
+        (row/col)_attr specifies a boolean array attribute
+    """
+    my_mean, my_std = batch_mean_and_std(loom_file=loom_file,
+                                         layer=layer,
+                                         axis=axis,
+                                         valid_ca=valid_ca,
+                                         valid_ra=valid_ra,
+                                         batch_size=batch_size,
+                                         verbose=verbose)
+    my_var = my_std ** 2
+    return [my_mean, my_var]
