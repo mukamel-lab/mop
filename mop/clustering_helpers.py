@@ -52,10 +52,12 @@ def clustering_from_graph(loom_file,
     
     Adapted from code written by Fangming Xie
     """
-    if (algorithm == "louvain") or (algorithm == "leiden") == False:
-        err_msg = "Only supported algorithms are louvain and leiden"
+    if algorithm in ['louvain', 'leiden']:
+        pass
+    else:
+        err_msg = 'Only supported algorithms are louvain and leiden'
         if verbose:
-            ch_log.error(err_msg)
+            clust_log.error(err_msg)
         raise ValueError(err_msg)
     col_idx = loom_utils.get_attr_index(loom_file=loom_file,
                                         attr=valid_ca,
