@@ -120,6 +120,13 @@ def batch_mean_and_std(loom_file,
     # Set values
     my_mean = old_mean
     my_std = old_std
+    # Restrict to valid cells/features
+    if axis == 0:
+        my_mean = my_mean[col_idx]
+        my_std = my_std[col_idx]
+    elif axis == 1:
+        my_mean = my_mean[row_idx]
+        my_std = my_std[row_idx]
     if my_mean is None:
         raise ValueError('Could not calculate statistics')
     if verbose:
