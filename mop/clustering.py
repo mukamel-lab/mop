@@ -16,29 +16,30 @@ from . import clustering_helpers as ch
 # Start log
 clust_log = logging.getLogger(__name__)
 
+
 def cluster_cells(loom_file,
-                    clust_attr='ClusterID',
-                    cell_attr='CellID',
-                    valid_ca=None,
-                    cluster_algorithm = "louvain",
-                    gen_pca=True,
-                    pca_attr='PCA',
-                    layer='',
-                    n_pca=50,
-                    drop_first=False,
-                    valid_ra=None,
-                    scale_attr=None,
-                    gen_knn=True,
-                    neighbor_attr='knn_indices',
-                    distance_attr='knn_distances',
-                    k=30,
-                    num_trees=50,
-                    metric='euclidean',
-                    gen_jaccard=True,
-                    jaccard_graph='jaccard_graph',
-                    batch_size=512,
-                    seed=23,
-                    verbose=False):
+                  clust_attr='ClusterID',
+                  cell_attr='CellID',
+                  valid_ca=None,
+                  cluster_algorithm="louvain",
+                  gen_pca=True,
+                  pca_attr='PCA',
+                  layer='',
+                  n_pca=50,
+                  drop_first=False,
+                  valid_ra=None,
+                  scale_attr=None,
+                  gen_knn=True,
+                  neighbor_attr='knn_indices',
+                  distance_attr='knn_distances',
+                  k=30,
+                  num_trees=50,
+                  metric='euclidean',
+                  gen_jaccard=True,
+                  jaccard_graph='jaccard_graph',
+                  batch_size=512,
+                  seed=23,
+                  verbose=False):
     """
     Performs Louvain or Leiden clustering on the Jaccard graph for a loom file
     
@@ -92,7 +93,8 @@ def cluster_cells(loom_file,
     """
     # Perform PCA
     print((cluster_algorithm == "louvain") or (cluster_algorithm == "leiden"))
-    if (cluster_algorithm == "louvain") or (cluster_algorithm == "leiden") == False:
+    if (cluster_algorithm == "louvain") or \
+            (cluster_algorithm == "leiden") is False:
         err_msg = "Only supported algorithms are louvain and leiden"
         if verbose:
             clust_log.error(err_msg)
@@ -143,7 +145,7 @@ def cluster_cells(loom_file,
     if clust_attr is None:
         clust_attr = 'ClusterID'
     ch.clustering_from_graph(loom_file=loom_file,
-                             algorithm = cluster_algorithm,
+                             algorithm=cluster_algorithm,
                              graph_attr=jaccard_graph,
                              clust_attr=clust_attr,
                              cell_attr=cell_attr,
@@ -151,6 +153,7 @@ def cluster_cells(loom_file,
                              directed=True,
                              seed=seed,
                              verbose=verbose)
+
 
 def louvain_jaccard(loom_file,
                     clust_attr='ClusterID',
@@ -223,28 +226,28 @@ def louvain_jaccard(loom_file,
         verbose (bool): If true, print logging statements
     """
     cluster_cells(loom_file,
-                    clust_attr= cluster_attr,
-                    cell_attr= cell_attr,
-                    valid_ca= valid_ca,
-                    cluster_algorithm = "louvain",
-                    gen_pca= gen_pca,
-                    pca_attr= pca_attr,
-                    layer= layer,
-                    n_pca= n_pca,
-                    drop_first=drop_first,
-                    valid_ra=valid_ra,
-                    scale_attr=scale_attr,
-                    gen_knn=gen_knn,
-                    neighbor_attr=neighbor_attr,
-                    distance_attr=distance_attr,
-                    k=k,
-                    num_trees=num_trees,
-                    metric=metrirc,
-                    gen_jaccard=gen_jaccard,
-                    jaccard_graph=jaccard_graph,
-                    batch_size=batch_size,
-                    seed=seed,
-                    verbose=verbose)
+                  clust_attr=clust_attr,
+                  cell_attr=cell_attr,
+                  valid_ca=valid_ca,
+                  cluster_algorithm="louvain",
+                  gen_pca=gen_pca,
+                  pca_attr=pca_attr,
+                  layer=layer,
+                  n_pca=n_pca,
+                  drop_first=drop_first,
+                  valid_ra=valid_ra,
+                  scale_attr=scale_attr,
+                  gen_knn=gen_knn,
+                  neighbor_attr=neighbor_attr, distance_attr=distance_attr,
+                  k=k,
+                  num_trees=num_trees,
+                  metric=metric,
+                  gen_jaccard=gen_jaccard,
+                  jaccard_graph=jaccard_graph,
+                  batch_size=batch_size,
+                  seed=seed,
+                  verbose=verbose)
+
 
 def cluster_and_reduce(loom_file,
                        reduce_method='umap',
@@ -252,7 +255,7 @@ def cluster_and_reduce(loom_file,
                        reduce_attr='umap',
                        n_reduce=2,
                        cell_attr='CellID',
-                       cluster_algorithm = "louvain",
+                       cluster_algorithm="louvain",
                        gen_pca=True,
                        pca_attr='PCA',
                        layer='',
@@ -351,27 +354,27 @@ def cluster_and_reduce(loom_file,
         raise ValueError(err_msg)
     # Perform clustering
     cluster_cells(loom_file=loom_file,
-                    clust_attr=clust_attr,
-                    cell_attr=cell_attr,
-                    valid_ca=valid_ca,
-                    cluster_algorithm = cluster_algorithm,
-                    gen_pca=gen_pca,
-                    pca_attr=pca_attr,
-                    layer=layer,
-                    n_pca=n_pca,
-                    valid_ra=valid_ra,
-                    scale_attr=scale_attr,
-                    gen_knn=gen_knn,
-                    neighbor_attr=neighbor_attr,
-                    distance_attr=distance_attr,
-                    k=k,
-                    num_trees=num_trees,
-                    metric=knn_metric,
-                    gen_jaccard=gen_jaccard,
-                    jaccard_graph=jaccard_graph,
-                    batch_size=batch_size,
-                    seed=seed,
-                    verbose=verbose)
+                  clust_attr=clust_attr,
+                  cell_attr=cell_attr,
+                  valid_ca=valid_ca,
+                  cluster_algorithm=cluster_algorithm,
+                  gen_pca=gen_pca,
+                  pca_attr=pca_attr,
+                  layer=layer,
+                  n_pca=n_pca,
+                  valid_ra=valid_ra,
+                  scale_attr=scale_attr,
+                  gen_knn=gen_knn,
+                  neighbor_attr=neighbor_attr,
+                  distance_attr=distance_attr,
+                  k=k,
+                  num_trees=num_trees,
+                  metric=knn_metric,
+                  gen_jaccard=gen_jaccard,
+                  jaccard_graph=jaccard_graph,
+                  batch_size=batch_size,
+                  seed=seed,
+                  verbose=verbose)
     # Reduce dimensions
     if reduce_method.lower() == 'pca':
         red_labels = ['x', 'y', 'z']
