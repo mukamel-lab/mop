@@ -195,12 +195,12 @@ def batch_pca_contexts(loom_file,
         if scale_attrs is not None:
             cell_dict[i] = scale_attrs[i]
     # Get selected cells
-    valid_attr = 'Valid_{}'.format(out_attr)
+    valid_ca = 'Valid_{}'.format(out_attr)
     with loompy.connect(loom_file) as ds:
         comb_idx = np.ones((ds.shape[1],), dtype=bool)
         for key in col_dict:
             comb_idx = np.logical_and(comb_idx, col_idx[key])
-        ds.ca[valid_attr] = comb_idx.astype(int)
+        ds.ca[valid_ca] = comb_idx.astype(int)
     # Get layer specific scaling factor (standard deviation)
     global_dict = dict()
     for key in layer_dict:

@@ -998,7 +998,7 @@ def allen_metadata(loom_file,
                                'Class_Allen']
     # Get QC information
     user_valid = loom_utils.get_attr_index(loom_file=loom_file,
-                                           attr=valid_attr,
+                                           attr=valid_ca,
                                            columns=True,
                                            as_bool=True,
                                            inverse=False)
@@ -1136,7 +1136,7 @@ def allen_smarter(count_file,
                    annotation=annotation,
                    membership=membership,
                    id_attr='CellID',
-                   valid_attr=None)
+                   valid_ca=None)
     counts.add_feature_length(loom_file=loom_file,
                               bed_file=bed_file,
                               id_attr='Accession',
