@@ -22,6 +22,8 @@ def cluster_cells(loom_file,
                   cell_attr='CellID',
                   valid_ca=None,
                   cluster_algorithm='louvain',
+                  optimization="modularity",
+                  resolution = 1.0,
                   gen_pca=True,
                   pca_attr='PCA',
                   layer='',
@@ -54,6 +56,14 @@ def cluster_cells(loom_file,
             values can be louvain or leiden. Both algorithms are performed
             through maximizing the modularity of the jacard weighted neighbor
             graph
+        optimiztion (str) : function to optimize partitions for can be:
+            - "modularity" maximizes the interconnectedness of communities, 
+                           generally the default
+            - "rb_vertex"  maximizes a quality function which is roughly 
+                           similar to modularity, but has a resolution 
+                           parameter which allows for more agressive splitting
+        resolution (float) : a linear parameter used in rb vertex optimization
+            a lower resolution results in more fine grained clusters
         gen_pca (bool): If true, perform dimensionality reduction
         pca_attr (str): Name of attribute containing PCs
             If gen_pca, this is the name of the output attribute
@@ -90,12 +100,21 @@ def cluster_cells(loom_file,
         batch_size (int): Number of elements per chunk (for PCA)
         seed (int): Random seed for clustering
         verbose (bool): If true, print logging statements
+        
     """
     # Perform PCA
     if cluster_algorithm in ['louvain', 'leiden']:
         pass
     else:
         err_msg = 'Only supported algorithms are louvain and leiden'
+        if verbose:
+            clust_log.error(err_msg)
+        raise ValueError(err_msg)
+    if optimization in ["modularity", "rb_vertex"]:
+        pass
+    else:
+        err_msg = 'Only supported optimization parameters are modularity \
+                    and rb_vertex'
         if verbose:
             clust_log.error(err_msg)
         raise ValueError(err_msg)
@@ -146,6 +165,8 @@ def cluster_cells(loom_file,
         clust_attr = 'ClusterID'
     ch.clustering_from_graph(loom_file=loom_file,
                              algorithm=cluster_algorithm,
+                             optimization=optimization,
+                             resolution=resolution,
                              graph_attr=jaccard_graph,
                              clust_attr=clust_attr,
                              cell_attr=cell_attr,
@@ -159,6 +180,8 @@ def louvain_jaccard(loom_file,
                     clust_attr='ClusterID',
                     cell_attr='CellID',
                     valid_ca=None,
+                    optimization="modularity",
+                    resolution = 1.0,
                     gen_pca=True,
                     pca_attr='PCA',
                     layer='',
@@ -187,7 +210,14 @@ def louvain_jaccard(loom_file,
         cell_attr (str): Attribute specifying cell IDs
             Convention is CellID
         valid_ca (str): Attribute specifying cells to include
-        valid_ra (str): Attribute specifying features to include in PCA
+        optimiztion (str) : function to optimize partitions for can be:
+            - "modularity" maximizes the interconnectedness of communities, 
+                           generally the default
+            - "rb_vertex"  maximizes a quality function which is roughly 
+                           similar to modularity, but has a resolution 
+                           parameter which allows for more agressive splitting
+        resolution (float) : a linear parameter used in rb vertex optimization
+            a lower resolution results in more fine grained clusters
         gen_pca (bool): If true, perform dimensionality reduction
         pca_attr (str): Name of attribute containing PCs
             If gen_pca, this is the name of the output attribute
@@ -230,6 +260,8 @@ def louvain_jaccard(loom_file,
                   cell_attr=cell_attr,
                   valid_ca=valid_ca,
                   cluster_algorithm='louvain',
+                  optimization=optimization,
+                  resolution=resolution,
                   gen_pca=gen_pca,
                   pca_attr=pca_attr,
                   layer=layer,
@@ -256,6 +288,8 @@ def cluster_and_reduce(loom_file,
                        n_reduce=2,
                        cell_attr='CellID',
                        cluster_algorithm='louvain',
+                       optimization="modularity",
+                       resolution = 1.0,
                        gen_pca=True,
                        pca_attr='PCA',
                        layer='',
@@ -295,6 +329,14 @@ def cluster_and_reduce(loom_file,
             values can be louvain or leiden. Both algorithms are performed
             through maximizing the modularity of the jacard weighted neighbor
             graph
+            optimiztion (str) : function to optimize partitions for can be:
+            - "modularity" maximizes the interconnectedness of communities, 
+                           generally the default
+            - "rb_vertex"  maximizes a quality function which is roughly 
+                           similar to modularity, but has a resolution 
+                           parameter which allows for more agressive splitting
+        resolution (float) : a linear parameter used in rb vertex optimization
+            a lower resolution results in more fine grained clusters
         gen_pca (bool): Perform PCA before clustering and later reduction
         pca_attr (str): Name of column attribute containing PCs
         layer (str): Name of layer in loom_file containing data for PCA
@@ -358,6 +400,8 @@ def cluster_and_reduce(loom_file,
                   cell_attr=cell_attr,
                   valid_ca=valid_ca,
                   cluster_algorithm=cluster_algorithm,
+                  optimization=optimization,
+                  resolution=resolution,
                   gen_pca=gen_pca,
                   pca_attr=pca_attr,
                   layer=layer,
