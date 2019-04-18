@@ -110,6 +110,14 @@ def cluster_cells(loom_file,
         if verbose:
             clust_log.error(err_msg)
         raise ValueError(err_msg)
+    if optimization in ["modularity", "rb_vertex"]:
+        pass
+    else:
+        err_msg = 'Only supported optimization parameters are modularity \
+                    and rb_vertex'
+        if verbose:
+            clust_log.error(err_msg)
+        raise ValueError(err_msg)
     if gen_pca:
         if pca_attr is None:
             pca_attr = 'PCA'

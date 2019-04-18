@@ -100,27 +100,28 @@ def clustering_from_graph(loom_file,
     
     if algorithm == "leiden":
         
-        if optimization == "modulatirty":
-            partition1 = leidenalg.find_partition(g,
-                                                  leidenalg.ModularityVertexPartition,
-                                                   weights=g.es["weight"])
-        else optimization == "rb_vertex":
+        if optimization == "rb_vertex":
             partition1 = leidenalg.find_partition(g, 
                                                   leidenalg.RBConfigurationVertexPartition,
                                                   weights=g.es["weight"],
                                                   resolution_parameter=1.0)
+        else :
+            partition1 = leidenalg.find_partition(g,
+                                                  leidenalg.ModularityVertexPartition,
+                                                   weights=g.es["weight"])
+            
     else:
 
-        if optimization == "modulatirty":
-            partition1 = louvain.find_partition(g,
-                                                  louvain.ModularityVertexPartition,
-                                                   weights=g.es["weight"])
-       
-        elif optimization == "rb_vertex":
+        if optimization == "rb_vertex":
             partition1 = louvain.find_partition(g, 
                                                  louvain.RBConfigurationVertexPartition,
                                                   weights=g.es["weight"],
                                                   resolution_parameter=1.0)
+        else: 
+            partition1 = louvain.find_partition(g,
+                                                  louvain.ModularityVertexPartition,
+                                                   weights=g.es["weight"])
+            
         
     # Get cluster IDs
     clusts = np.empty((adj_mtx.shape[0],), dtype=int)
