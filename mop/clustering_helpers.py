@@ -45,9 +45,12 @@ def clustering_from_graph(loom_file,
             values can be "louvain" or "leiden". Both algorithms are perfromed
             through maximizing the modularity of the jacard weighted neighbor
             graph
-        optimiztion (str) : function to optimize partitions for can be:
-            - "modularity"
-            - "rb_vertex"
+       optimiztion (str) : function to optimize partitions for can be:
+            - "modularity" maximizes the interconnectedness of communities, 
+                           generally the default
+            - "rb_vertex"  maximizes a quality function which is roughly 
+                           similar to modularity, but has a resolution 
+                           parameter which allows for more agressive splitting
         directed (bool): If true, graph should be directed
         seed (int): Seed for random processes
         verbose (bool): If true, print logging messages

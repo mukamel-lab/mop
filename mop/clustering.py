@@ -57,9 +57,13 @@ def cluster_cells(loom_file,
             through maximizing the modularity of the jacard weighted neighbor
             graph
         optimiztion (str) : function to optimize partitions for can be:
-            - "modularity"
-            - "rb_vertex"
+            - "modularity" maximizes the interconnectedness of communities, 
+                           generally the default
+            - "rb_vertex"  maximizes a quality function which is roughly 
+                           similar to modularity, but has a resolution 
+                           parameter which allows for more agressive splitting
         resolution (float) : a linear parameter used in rb vertex optimization
+            a lower resolution results in more fine grained clusters
         gen_pca (bool): If true, perform dimensionality reduction
         pca_attr (str): Name of attribute containing PCs
             If gen_pca, this is the name of the output attribute
@@ -198,7 +202,14 @@ def louvain_jaccard(loom_file,
         cell_attr (str): Attribute specifying cell IDs
             Convention is CellID
         valid_ca (str): Attribute specifying cells to include
-        valid_ra (str): Attribute specifying features to include in PCA
+        optimiztion (str) : function to optimize partitions for can be:
+            - "modularity" maximizes the interconnectedness of communities, 
+                           generally the default
+            - "rb_vertex"  maximizes a quality function which is roughly 
+                           similar to modularity, but has a resolution 
+                           parameter which allows for more agressive splitting
+        resolution (float) : a linear parameter used in rb vertex optimization
+            a lower resolution results in more fine grained clusters
         gen_pca (bool): If true, perform dimensionality reduction
         pca_attr (str): Name of attribute containing PCs
             If gen_pca, this is the name of the output attribute
@@ -241,8 +252,6 @@ def louvain_jaccard(loom_file,
                   cell_attr=cell_attr,
                   valid_ca=valid_ca,
                   cluster_algorithm='louvain',
-                  optimization=optimization,
-                  resolution=resolution,
                   optimization=optimization,
                   resolution=resolution,
                   gen_pca=gen_pca,
@@ -312,6 +321,14 @@ def cluster_and_reduce(loom_file,
             values can be louvain or leiden. Both algorithms are performed
             through maximizing the modularity of the jacard weighted neighbor
             graph
+            optimiztion (str) : function to optimize partitions for can be:
+            - "modularity" maximizes the interconnectedness of communities, 
+                           generally the default
+            - "rb_vertex"  maximizes a quality function which is roughly 
+                           similar to modularity, but has a resolution 
+                           parameter which allows for more agressive splitting
+        resolution (float) : a linear parameter used in rb vertex optimization
+            a lower resolution results in more fine grained clusters
         gen_pca (bool): Perform PCA before clustering and later reduction
         pca_attr (str): Name of column attribute containing PCs
         layer (str): Name of layer in loom_file containing data for PCA
