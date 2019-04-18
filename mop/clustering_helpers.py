@@ -27,6 +27,8 @@ def clustering_from_graph(loom_file,
                           cell_attr='CellID',
                           valid_ca=None,
                           algorithm = "louvain",
+                          optimization = "modularity",
+                          resolution = "resolution",
                           directed=True,
                           seed=23,
                           verbose=False):
@@ -43,6 +45,9 @@ def clustering_from_graph(loom_file,
             values can be "louvain" or "leiden". Both algorithms are perfromed
             through maximizing the modularity of the jacard weighted neighbor
             graph
+        optimiztion (str) : function to optimize partitions for can be:
+            - "modularity"
+            - "rb_vertex"
         directed (bool): If true, graph should be directed
         seed (int): Seed for random processes
         verbose (bool): If true, print logging messages
@@ -89,12 +94,31 @@ def clustering_from_graph(loom_file,
     if seed is not None:
         louvain.set_rng_seed(seed)
         
+    
     if algorithm == "leiden":
-        partition1 = leidenalg.find_partition(g, leidenalg.ModularityVertexPartition)
+        
+        if optimization == "modulatirty":
+            partition1 = leidenalg.find_partition(g,
+                                                  leidenalg.ModularityVertexPartition,
+                                                   weights=g.es["weight"])
+        else optimization == "rb_vertex":
+            partition1 = leidenalg.find_partition(g, 
+                                                  leidenalg.RBConfigurationVertexPartition,
+                                                  weights=g.es["weight"],
+                                                  resolution_parameter=1.0)
     else:
-        partition1 = louvain.find_partition(g,
-                                        louvain.ModularityVertexPartition,
-                                        weights=g.es['weight'])
+
+        if optimization == "modulatirty":
+            partition1 = louvain.find_partition(g,
+                                                  louvain.ModularityVertexPartition,
+                                                   weights=g.es["weight"])
+       
+        elif optimization == "rb_vertex":
+            partition1 = louvain.find_partition(g, 
+                                                 louvain.RBConfigurationVertexPartition,
+                                                  weights=g.es["weight"],
+                                                  resolution_parameter=1.0)
+        
     # Get cluster IDs
     clusts = np.empty((adj_mtx.shape[0],), dtype=int)
     clusts[:] = np.nan
