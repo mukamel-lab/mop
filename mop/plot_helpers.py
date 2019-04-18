@@ -288,6 +288,12 @@ def get_random_colors(n):
               '#4D5C5E', '#C9403A', '#DDD7F3', '#005844', '#B4A200', '#488F69',
               '#858182', '#D4E9B9',
               '#3D7397', '#CAE8CE', '#D60034', '#AA6746', '#9E5585', '#BA6200']
+    num_cols = len(colors)
+    if n > num_cols:
+        repeat_number = np.floor(n / num_cols)
+        old_colors = colors[:]
+        for _i in np.arange(start=0,stop=repeat_number):
+            colors = colors + old_colors
     return colors[:n]
 
 
