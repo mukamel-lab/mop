@@ -14,7 +14,9 @@ from scipy import sparse
 import logging
 import tables
 import time
+from shutil import copyfile
 from . import general_utils
+from . import loom_utils
 
 # Start log
 io_log = logging.getLogger(__name__)
@@ -256,3 +258,105 @@ def cellranger_bc_h5_to_loom(h5_file,
                      empty_base=True,
                      batch_size=batch_size,
                      verbose=verbose)
+
+
+def copy_loom(old_loom,
+              new_loom,
+              row_attrs=None,
+              col_attrs=None,
+              layers=None,
+              valid_ra=None,
+              valid_ca=None,
+              batch_size=512,
+              verbose=False):
+    """
+    Copies a loom file only retaining the layers, rows, and columns specified
+
+    Args:
+        old_loom (str): Path to loom file to be copied
+        new_loom (str): Path to output loom file
+        row_attrs (str/list): Row attribute(s) from old_loom to copy
+            If None, copies everything
+        col_attrs (str/list): Column attribute(s) from old_loom to copy
+            If None, copies everything
+        layers (str/list): Layer(s) from old_loom to copy
+            Will automatically include base ('') layer
+            If None, copies everything
+        valid_ra (str): Row attribute specifying rows to include
+        valid_ca (str): Column attribute specifying columns to include
+        batch_size (int): Size of batches
+        verbose (bool): Print logging messages
+    """
+    # Set-up for subsequent steps
+    if verbose:
+        t0 = time.time()
+        io_log.info(
+            'Copying relevant data from {0} to {1}'.format(old_loom, new_loom))
+    append = False
+    # See if we can skip the rest of this function
+    use_rows = row_attrs is not None
+    use_cols = col_attrs is not None
+    use_layers = layers is not None
+    use_valid_ca = valid_ca is not None
+    use_valid_ra = valid_ra is not None
+    if np.all([use_rows, use_cols, use_layers, use_valid_ca, use_valid_ra]):
+        # Can just copy the loom file
+        copyfile(old_loom, new_loom)
+    else:
+        # Get valid data
+        col_idx = loom_utils.get_attr_index(loom_file=old_loom,
+                                            attr=valid_ca,
+                                            columns=True,
+                                            inverse=False)
+        row_idx = loom_utils.get_attr_index(loom_file=old_loom,
+                                            attr=valid_ra,
+                                            columns=False,
+                                            inverse=False)
+        # Get data
+        with loompy.connect(old_loom, mode='r') as ds_old:
+            # Check inputs
+            if use_layers:
+                layers = loom_utils.make_layer_list(layers)
+            else:
+                layers = ds_old.layers.keys()
+            if use_rows:
+                row_attrs = general_utils.convert_str_to_list(row_attrs)
+            else:
+                row_attrs = ds_old.ra.keys()
+            if use_cols:
+                col_attrs = general_utils.convert_str_to_list(col_attrs)
+            else:
+                col_attrs = ds_old.ca.keys()
+            # Make copy
+            for (_, selection, view) in ds_old.scan(axis=1,
+                                                    items=col_idx,
+                                                    layers=layers,
+                                                    batch_size=batch_size):
+                # Get data
+                new_layers = dict()
+                for layer in layers:
+                    new_layers[layer] = view.layers[layer][row_idx, :]
+                new_rows = dict()
+                for row_attr in row_attrs:
+                    new_rows[row_attr] = view.ra[row_attr][row_idx]
+                new_cols = dict()
+                for col_attr in col_attrs:
+                    new_cols[col_attr] = view.ca[col_attr]
+                    # Add data
+                if append:
+                    with loompy.connect(filename=new_loom) as ds_new:
+                        ds_new.add_columns(layers=new_layers,
+                                           row_attrs=new_rows,
+                                           col_attrs=new_cols)
+                else:
+                    loompy.create(filename=new_loom,
+                                  layers=new_layers,
+                                  row_attrs=new_rows,
+                                  col_attrs=new_cols)
+                    append = True
+    # Log (if necessary)
+    if verbose:
+        t1 = time.time()
+        time_run, time_fmt = general_utils.format_run_time(t0, t1)
+        io_log.info(
+            'Copied loom file in {0:.2f} {1}'.format(time_run, time_fmt))
