@@ -317,7 +317,7 @@ def cluster_markers(loom_file,
                                             axis=1,
                                             batch_size=batch_size):
             tmp_max = np.max(view.layers[mcc_layer][row_idx, :])
-            max_bin = np.max(tmp_max, max_bin)
+            max_bin = np.max([tmp_max, max_bin])
     bins = np.arange(0, max_bin, 0.05)
     # Get markers
     for col in cluster_mcc.columns:
