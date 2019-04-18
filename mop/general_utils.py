@@ -247,6 +247,35 @@ def remove_gene_version(gene_ids):
 
 
 def make_nan_array(num_rows, num_cols):
+    """
+    Makes a NaN array of an arbitrary size
+
+    Args:
+        num_rows (int): Number of rows for output array
+        num_cols (int): Number of columns for output array
+
+    Returns:
+        nan_array (ndarray): Array of NaNs
+    """
     nan_array = np.empty((num_rows, num_cols))
     nan_array.fill(np.nan)
     return nan_array
+
+
+def convert_str_to_list(x):
+    """
+    Converts a string to a list (will error if not a string or list)
+
+    Args:
+        x (str/list): Variable to be checked/converted
+
+    Returns:
+        y (list): x as a list
+    """
+    if isinstance(x, str):
+        y = list[x]
+    elif isinstance(x, list):
+        y = x[:]
+    else:
+        raise ValueError('x must be a string or a list')
+    return y
