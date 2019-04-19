@@ -36,6 +36,8 @@ issues is to follow our `guide <docs/mop_conda_guide.rst>`_.
 
 Tutorials and FAQs
 --------------------
+Our `FAQs <docs/faqs.rst>`_ has answers to frequently asked questions about using MoP.
+
 For an example notebook showing the processing of methylome (snmC-seq) data please check out
 this `link <docs/process_snmc_example.ipynb>`_.
 
