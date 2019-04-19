@@ -299,10 +299,7 @@ def copy_loom(old_loom,
     use_layers = layers is not None
     use_valid_ca = valid_ca is not None
     use_valid_ra = valid_ra is not None
-    if np.all([use_rows, use_cols, use_layers, use_valid_ca, use_valid_ra]):
-        # Can just copy the loom file
-        copyfile(old_loom, new_loom)
-    else:
+    if np.any([use_rows, use_cols, use_layers, use_valid_ca, use_valid_ra]):
         # Get valid data
         col_idx = loom_utils.get_attr_index(loom_file=old_loom,
                                             attr=valid_ca,
@@ -354,6 +351,8 @@ def copy_loom(old_loom,
                                   row_attrs=new_rows,
                                   col_attrs=new_cols)
                     append = True
+    else:
+        copyfile(old_loom, new_loom)
     # Log (if necessary)
     if verbose:
         t1 = time.time()
