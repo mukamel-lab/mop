@@ -55,7 +55,7 @@ def cluster_cells(loom_file,
             values can be louvain or leiden. Both algorithms are performed
             through maximizing the modularity of the jacard weighted neighbor
             graph
-        resolution (float) : a lower resolution results in more fine
+        resolution (float) : a greater resolution results in more fine
             grained clusters
         gen_pca (bool): If true, perform dimensionality reduction
         pca_attr (str): Name of attribute containing PCs
@@ -194,7 +194,7 @@ def louvain_jaccard(loom_file,
             Convention is CellID
         valid_ca (str): Attribute specifying cells to include
         resolution (float) : a linear parameter 
-            a lower resolution results in more fine grained clusters
+            a greater resolution results in more fine grained clusters
         gen_pca (bool): If true, perform dimensionality reduction
         pca_attr (str): Name of attribute containing PCs
             If gen_pca, this is the name of the output attribute
@@ -305,7 +305,8 @@ def cluster_and_reduce(loom_file,
             through maximizing the modularity of the jacard weighted neighbor
             graph
         
-            a lower resolution results in more fine grained clusters
+        resolution (float) : a greater resolution results in more fine
+            grained clusters
         gen_pca (bool): Perform PCA before clustering and later reduction
         pca_attr (str): Name of column attribute containing PCs
         layer (str): Name of layer in loom_file containing data for PCA

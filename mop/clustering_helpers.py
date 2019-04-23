@@ -44,7 +44,8 @@ def clustering_from_graph(loom_file,
             values can be "louvain" or "leiden". Both algorithms are perfromed
             through maximizing the modularity of the jacard weighted neighbor
             graph
-        resolution (float): 
+        resolution (float): a greater resolution results in more fine
+            grained clusters
         directed (bool): If true, graph should be directed
         seed (int): Seed for random processes
         verbose (bool): If true, print logging messages
