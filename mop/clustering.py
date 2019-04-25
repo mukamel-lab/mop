@@ -23,6 +23,8 @@ def cluster_cells(loom_file,
                   valid_ca=None,
                   cluster_algorithm='leiden',
                   resolution = 1.0,
+                  n_iter = 2,
+                  num_starts = None,
                   gen_pca=True,
                   pca_attr='PCA',
                   layer='',
@@ -57,6 +59,11 @@ def cluster_cells(loom_file,
             graph
         resolution (float) : a greater resolution results in more fine
             grained clusters
+        n_iter (int) : for leiden algorithm only, the number of iterations 
+            to further optimize the modularity of the partition
+        num_starts (int) : a number of times to run clustering with differnet
+            random seeds, returning the one with the highest modularity
+            unsupported for louvain
         gen_pca (bool): If true, perform dimensionality reduction
         pca_attr (str): Name of attribute containing PCs
             If gen_pca, this is the name of the output attribute
@@ -69,6 +76,8 @@ def cluster_cells(loom_file,
             If true, the first principal component will be lost
         valid_ra (str): Attribute specifying features to include
             Only used if performing PCA 
+            Only used if performing PCA
+        scale_attr (str): Optional, attribute specifying cell scaling factor
             Only used if performing PCA
         gen_knn (bool): If true, generate kNN indices/distances
         neighbor_attr (str): Attribute specifying neighbor indices
@@ -148,9 +157,12 @@ def cluster_cells(loom_file,
                                  batch_size=batch_size)
     if clust_attr is None:
         clust_attr = 'ClusterID'
+    
     ch.clustering_from_graph(loom_file=loom_file,
                              algorithm=cluster_algorithm,
                              resolution=resolution,
+                             n_iter = n_iter,
+                             num_starts = num_starts,
                              graph_attr=jaccard_graph,
                              clust_attr=clust_attr,
                              cell_attr=cell_attr,
@@ -160,11 +172,14 @@ def cluster_cells(loom_file,
                              verbose=verbose)
 
 
+
+
 def louvain_jaccard(loom_file,
                     clust_attr='ClusterID',
                     cell_attr='CellID',
                     valid_ca=None,
                     resolution = 1.0,
+                    num_starts = None, #bugged unsupported
                     gen_pca=True,
                     pca_attr='PCA',
                     layer='',
@@ -195,6 +210,9 @@ def louvain_jaccard(loom_file,
         valid_ca (str): Attribute specifying cells to include
         resolution (float) : a linear parameter 
             a greater resolution results in more fine grained clusters
+        num_starts (int) : a number of times to run clustering with different
+            random seeds, returning the one with the highest modularity
+            unsupported for louvain
         gen_pca (bool): If true, perform dimensionality reduction
         pca_attr (str): Name of attribute containing PCs
             If gen_pca, this is the name of the output attribute
@@ -238,6 +256,7 @@ def louvain_jaccard(loom_file,
                   valid_ca=valid_ca,
                   cluster_algorithm='louvain',
                   resolution=resolution,
+                  num_starts = num_starts,
                   gen_pca=gen_pca,
                   pca_attr=pca_attr,
                   layer=layer,
@@ -265,6 +284,8 @@ def cluster_and_reduce(loom_file,
                        cell_attr='CellID',
                        cluster_algorithm='leiden',
                        resolution = 1.0,
+                       leiden_iter = 2,
+                       num_starts = None,
                        gen_pca=True,
                        pca_attr='PCA',
                        layer='',
@@ -304,9 +325,12 @@ def cluster_and_reduce(loom_file,
             values can be louvain or leiden. Both algorithms are performed
             through maximizing the modularity of the jacard weighted neighbor
             graph
-        
         resolution (float) : a greater resolution results in more fine
             grained clusters
+        leiden_iter (int) : for leiden algorithm only, the number of iterations 
+            to further optimize the modularity of the partition
+        num_starts (int) : a number of times to run clustering with differnet
+            random seeds, returning the one with the highest modularity
         gen_pca (bool): Perform PCA before clustering and later reduction
         pca_attr (str): Name of column attribute containing PCs
         layer (str): Name of layer in loom_file containing data for PCA
@@ -371,6 +395,8 @@ def cluster_and_reduce(loom_file,
                   valid_ca=valid_ca,
                   cluster_algorithm=cluster_algorithm,
                   resolution=resolution,
+                  n_iter = leiden_iterations,
+                  num_starts = num_starts,
                   gen_pca=gen_pca,
                   pca_attr=pca_attr,
                   layer=layer,

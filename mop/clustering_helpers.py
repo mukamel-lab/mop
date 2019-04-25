@@ -13,9 +13,11 @@ import time
 import logging
 import louvain
 import leidenalg
+import igraph
 from . import neighbors
 from . import loom_utils
 from . import general_utils
+
 
 # Start log
 ch_log = logging.getLogger(__name__)
@@ -28,6 +30,8 @@ def clustering_from_graph(loom_file,
                           valid_ca=None,
                           algorithm = "leiden",
                           resolution = 1.0,
+                          n_iter = 2,
+                          num_starts = None,
                           directed=True,
                           seed=23,
                           verbose=False):
@@ -46,6 +50,11 @@ def clustering_from_graph(loom_file,
             graph
         resolution (float): a greater resolution results in more fine
             grained clusters
+         n_iter (int) : for leiden algorithm only, the number of iterations 
+            to further optimize the modularity of the partition
+        num_starts (int) : a number of times to run clustering with differnet
+            random seeds, returning the one with the highest modularity
+            unsupported for louvain
         directed (bool): If true, graph should be directed
         seed (int): Seed for random processes
         verbose (bool): If true, print logging messages
@@ -88,22 +97,60 @@ def clustering_from_graph(loom_file,
             'Converted to igraph in {0:.2f} {1}'.format(time_run, time_fmt))
     # Cluster with Louvain
     if verbose:
-        ch_log.info('Performing clustering with Louvain')
-    if seed is not None:
-        louvain.set_rng_seed(seed)
-        
+        ch_log.info('Performing clustering with {}'.format(algorithm))
+      
     
     if algorithm == "leiden":
+        if num_starts is not None:
+            np.random.seed(seed)
+            partitions = []
+            quality = []
+            seeds = np.random.randint(300, size = num_starts)
+            for seed in seeds:
+                temp_partition = leidenalg.find_partition(g, 
+                                                  leidenalg.RBConfigurationVertexPartition,
+                                                  weights=g.es["weight"],
+                                                  resolution_parameter=resolution,
+                                                  seed = seed,
+                                                  n_iterations = n_iter)
+                quality.append(temp_partition.quality())
+                partitions.append(temp_partition)
+            partition1 = partitions[np.argmax(quality)]
+            print(quality)
+        else:
             partition1 = leidenalg.find_partition(g, 
                                                   leidenalg.RBConfigurationVertexPartition,
                                                   weights=g.es["weight"],
-                                                  resolution_parameter=resolution)
+                                                  resolution_parameter=resolution,
+                                                  seed = seed,
+                                                  n_iterations = n_iter)
 
     else:
-            partition1 = louvain.find_partition(g, 
-                                                 louvain.RBConfigurationVertexPartition,
-                                                  weights=g.es["weight"],
-                                                  resolution_parameter=resolution)
+        if num_starts is not None:
+            ch_log.info('multiple starts unsupported for louvain algorithm')
+#         print("else")
+#         if num_starts is not None:  
+#                 np.random.seed(seed)
+#                 partitions = []
+#                 quality = []
+#                 seeds = np.random.randint(300, size = num_starts)
+#                 print("starts")
+#                 for seed in seeds:
+#                     #louvain.set_rng_seed(seed)
+#                     temp_partition = louvain.find_partition(g, 
+#                                                       leidenalg.RBConfigurationVertexPartition,
+#                                                       weights=g.es["weight"],
+#                                                       resolution_parameter=resolution)
+#                     quality.append(temp_partition.quality())
+#                     partitions.append(temp_partition)
+#                     print(quality)
+#                 partition1 = partitions[np.argmax(quality)]
+        if seed is not None:
+            louvain.set_rng_seed(seed)
+        partition1 = louvain.find_partition(g, 
+                                             louvain.RBConfigurationVertexPartition,
+                                             weights=g.es["weight"],
+                                             resolution_parameter=resolution)
 
 
         
