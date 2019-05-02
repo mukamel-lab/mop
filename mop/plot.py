@@ -43,6 +43,7 @@ def scatter_cell(loom_file,
                  cbar_label=None,
                  low_p=1,
                  high_p=99,
+                 shuffle=False,
                  figsize=(8, 6),
                  close=False,
                  fig=None,
@@ -73,6 +74,7 @@ def scatter_cell(loom_file,
         title (str): Optional, title for plot
         as_heatmap (bool): Plots attribute values as a heatmap
         cbar_label (str): Optional, adds and names colorbar
+        shuffle (bool): Shuffle points so well-mixed
         low_p (int): Low end for percentile normalization (0-100)
         high_p (int): High end for percentile normalization (0-100)
         figsize (tuple): Size of scatter plot figure
@@ -107,6 +109,8 @@ def scatter_cell(loom_file,
                                                  color_label='color')
         else:
             df_plot['color'] = ds.ca[color_attr][col_idx]
+        if shuffle:
+            df_plot = df_plot.sample(frac=1,axis='index').reset_index(drop=True)
         if downsample_attr is not None:
             df_plot[downsample_attr] = ds.ca[downsample_attr][col_idx]
     # Handle downsampling
@@ -194,6 +198,7 @@ def scatter_feature(loom_file,
                     cbar_label=None,
                     low_p=1,
                     high_p=99,
+                    shuffle=False,
                     gray_noncoverage=False,
                     coverage_layer=None,
                     figsize=(8, 6),
@@ -230,6 +235,7 @@ def scatter_feature(loom_file,
         cbar_label (str): Optional, adds and names colorbar
         low_p (int): Low end for percentile normalization (0-100)
         high_p (int): High end for percentile normalization (0-100)
+        shuffle (bool): Shuffle data so points are well-mixed
         gray_noncoverage (bool): Set non-covered features  to gray values
             Useful for methylation data
         coverage_layer (str): Layer used to identify covered features
@@ -280,6 +286,9 @@ def scatter_feature(loom_file,
     df_plot['color'] = ph.percentile_norm(counts=counts,
                                           low_p=low_p,
                                           high_p=high_p)
+    # Shuffle
+    if shuffle:
+        df_plot = df_plot.sample(frac=1,axis='index').reset_index(drop=True)
     # Downsample
     if downsample is not None:
         if isinstance(downsample, int):
