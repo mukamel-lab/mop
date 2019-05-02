@@ -116,7 +116,6 @@ def clustering_from_graph(loom_file,
                 quality.append(temp_partition.quality())
                 partitions.append(temp_partition)
             partition1 = partitions[np.argmax(quality)]
-            print(quality)
         else:
             partition1 = leidenalg.find_partition(g, 
                                                   leidenalg.RBConfigurationVertexPartition,

@@ -30,6 +30,7 @@ def batch_pca(loom_file,
               scale_attr=None,
               n_pca=50,
               drop_first=False,
+              return_transformer = False,
               batch_size=512,
               verbose=False):
     """
@@ -48,6 +49,8 @@ def batch_pca(loom_file,
             Useful if the first PC correlates with a technical feature
             If true, a total of n_pca is still generated and added to loom_file
             If true, the first principal component will be lost
+        return_transformer (bool): if true returns the sklearn PCA object
+            which can be used to transform further data in an out group
         batch_size (int): Number of elements per chunk
         verbose (bool): If true, print logging messages
     
@@ -122,6 +125,8 @@ def batch_pca(loom_file,
             time_run, time_fmt = general_utils.format_run_time(t_fit, t_tran)
             decomp_log.info(
                 'Reduced dimensions in {0:.2f} {1}'.format(time_run, time_fmt))
+        if return_transformer:
+            return pca
 
 
 def batch_pca_contexts(loom_file,
@@ -132,6 +137,7 @@ def batch_pca_contexts(loom_file,
                        scale_attrs=None,
                        n_pca=50,
                        drop_first=False,
+                       return_transformer = False,
                        batch_size=512,
                        verbose=False):
     """
@@ -151,6 +157,8 @@ def batch_pca_contexts(loom_file,
             Useful if the first PC correlates with a technical feature
             If true, a total of n_pca is still generated and added to loom_file
             If true, the first principal component will be lost
+        return_transformer (bool): if true returns the sklearn PCA object
+            which can be used to transform further data in an out group
         batch_size (int): Number of elements per chunk
         verbose (bool): If true, print logging messages
         
@@ -260,6 +268,8 @@ def batch_pca_contexts(loom_file,
             time_run, time_fmt = general_utils.format_run_time(t_fit, t_tran)
             decomp_log.info(
                 'Reduced dimensions in {0:.2f} {1}'.format(time_run, time_fmt))
+    if return_transformer:
+            return pca
 
 
 def run_tsne(loom_file,
