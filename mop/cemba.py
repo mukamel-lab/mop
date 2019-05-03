@@ -7,7 +7,6 @@ Written by Wayne Doyle
 import loompy
 import pandas as pd
 import numpy as np
-import re
 import time
 import glob
 import os
@@ -289,7 +288,7 @@ def add_atac_qc(loom_file,
         for (_, selection, view) in ds.scan(layers=layers,
                                             batch_size=batch_size,
                                             axis=1):
-            min_num = np.sum(view.layers[layer][:, :] >= cell_min,axis=0)
+            min_num = np.sum(view.layers[layer][:, :] >= cell_min, axis=0)
             if cell_cov is None:
                 qc_three[selection] = (min_num / view.shape[0]) > 0
             else:
@@ -299,7 +298,7 @@ def add_atac_qc(loom_file,
         qc_row = np.zeros((ds.shape[0],), dtype=bool)
         for (_, selection, view) in ds.scan(layers=layers,
                                             batch_size=batch_size,
-                                            axis = 0):
+                                            axis=0):
             min_num = np.sum(view.layers[layer][:, :] >= feat_min, axis=1)
             if feat_cov is None:
                 qc_row[selection] = (min_num / view.shape[1]) > 0

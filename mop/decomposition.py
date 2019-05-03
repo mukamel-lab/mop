@@ -16,7 +16,7 @@ import time
 from . import loom_utils
 from . import general_utils
 from . import statistics
-from . import decomposition_helpers as dh
+from . import helpers
 
 # Start log
 decomp_log = logging.getLogger(__name__)
@@ -30,7 +30,7 @@ def batch_pca(loom_file,
               scale_attr=None,
               n_pca=50,
               drop_first=False,
-              return_transformer = False,
+              return_transformer=False,
               batch_size=512,
               verbose=False):
     """
@@ -66,10 +66,10 @@ def batch_pca(loom_file,
     else:
         n_tmp = n_pca
     # Check user's batch size
-    batch_size = dh.check_pca_batches(loom_file=loom_file,
-                                      n_pca=n_pca,
-                                      batch_size=batch_size,
-                                      verbose=verbose)
+    batch_size = helpers.check_pca_batches(loom_file=loom_file,
+                                           n_pca=n_pca,
+                                           batch_size=batch_size,
+                                           verbose=verbose)
     # Perform PCA
     pca = IncrementalPCA(n_components=n_tmp)
     with loompy.connect(loom_file) as ds:
@@ -90,10 +90,10 @@ def batch_pca(loom_file,
                                     layers=layers,
                                     axis=1,
                                     batch_size=batch_size):
-            dat = dh.prep_pca(view=view,
-                              layer=layer,
-                              row_idx=row_idx,
-                              scale_attr=scale_attr)
+            dat = helpers.prep_pca(view=view,
+                                   layer=layer,
+                                   row_idx=row_idx,
+                                   scale_attr=scale_attr)
             pca.partial_fit(dat)
         if verbose:
             t_fit = time.time()
@@ -104,10 +104,10 @@ def batch_pca(loom_file,
                                             layers=layers,
                                             axis=1,
                                             batch_size=batch_size):
-            dat = dh.prep_pca(view=view,
-                              layer=layer,
-                              row_idx=row_idx,
-                              scale_attr=scale_attr)
+            dat = helpers.prep_pca(view=view,
+                                   layer=layer,
+                                   row_idx=row_idx,
+                                   scale_attr=scale_attr)
             dat = pca.transform(dat)
             if drop_first:
                 dat = dat[:, 1:]
@@ -137,7 +137,7 @@ def batch_pca_contexts(loom_file,
                        scale_attrs=None,
                        n_pca=50,
                        drop_first=False,
-                       return_transformer = False,
+                       return_transformer=False,
                        batch_size=512,
                        verbose=False):
     """
@@ -167,10 +167,10 @@ def batch_pca_contexts(loom_file,
         decomp_log.info('Fitting PCA')
         t_start = time.time()
     # Check user's batch size
-    batch_size = dh.check_pca_batches(loom_file=loom_file,
-                                      n_pca=n_pca,
-                                      batch_size=batch_size,
-                                      verbose=verbose)
+    batch_size = helpers.check_pca_batches(loom_file=loom_file,
+                                           n_pca=n_pca,
+                                           batch_size=batch_size,
+                                           verbose=verbose)
     # Make dictionary of values
     layer_dict = dict()
     cell_dict = dict()
@@ -237,11 +237,11 @@ def batch_pca_contexts(loom_file,
                                     axis=1,
                                     layers=layers,
                                     batch_size=batch_size):
-            comb_layers = dh.prep_pca_contexts(view,
-                                               layer_dict=layer_dict,
-                                               cell_dict=cell_dict,
-                                               global_dict=global_dict,
-                                               row_dict=row_idx)
+            comb_layers = helpers.prep_pca_contexts(view,
+                                                    layer_dict=layer_dict,
+                                                    cell_dict=cell_dict,
+                                                    global_dict=global_dict,
+                                                    row_dict=row_idx)
             pca.partial_fit(comb_layers)
         if verbose:
             t_fit = time.time()
@@ -252,11 +252,11 @@ def batch_pca_contexts(loom_file,
                                             axis=1,
                                             layers=layers,
                                             batch_size=batch_size):
-            comb_layers = dh.prep_pca_contexts(view,
-                                               layer_dict=layer_dict,
-                                               cell_dict=cell_dict,
-                                               global_dict=global_dict,
-                                               row_dict=row_idx)
+            comb_layers = helpers.prep_pca_contexts(view,
+                                                    layer_dict=layer_dict,
+                                                    cell_dict=cell_dict,
+                                                    global_dict=global_dict,
+                                                    row_dict=row_idx)
             comb_layers = pca.transform(comb_layers)
             if drop_first:
                 comb_layers = comb_layers[:, 1:]
@@ -269,7 +269,7 @@ def batch_pca_contexts(loom_file,
             decomp_log.info(
                 'Reduced dimensions in {0:.2f} {1}'.format(time_run, time_fmt))
     if return_transformer:
-            return pca
+        return pca
 
 
 def run_tsne(loom_file,

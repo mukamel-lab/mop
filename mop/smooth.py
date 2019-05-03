@@ -26,7 +26,7 @@ from . import neighbors
 from . import decomposition
 from . import snmcseq
 from . import counts
-from . import smooth_helpers as sh
+from . import helpers
 
 # Start log
 smooth_log = logging.getLogger(__name__)
@@ -138,7 +138,7 @@ def smooth_counts(loom_file,
     if gen_w:
         if w_graph is None:
             w_graph = 'W'
-        sh.compute_markov(loom_file=loom_file,
+        helpers.compute_markov(loom_file=loom_file,
                           neighbor_attr=neighbor_attr,
                           distance_attr=distance_attr,
                           out_graph=w_graph,
@@ -149,7 +149,7 @@ def smooth_counts(loom_file,
                           p=p,
                           verbose=verbose)
     # Smooth counts
-    sh.perform_smoothing(loom_file=loom_file,
+    helpers.perform_smoothing(loom_file=loom_file,
                          in_layer=observed_layer,
                          out_layer=smoothed_layer,
                          w_graph=w_graph,
