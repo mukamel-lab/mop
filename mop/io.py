@@ -22,18 +22,18 @@ from . import loom_utils
 io_log = logging.getLogger(__name__)
 
 
-def add_dense(count_file,
-              loom_file,
-              feature_axis,
-              append=False,
-              observation_id=None,
-              feature_id=None,
-              layer_id='',
-              sep='\t',
-              verbose=False,
-              **kwargs):
+def add_csv(count_file,
+            loom_file,
+            feature_axis,
+            append=False,
+            observation_id=None,
+            feature_id=None,
+            layer_id='counts',
+            sep='\t',
+            verbose=False,
+            **kwargs):
     """
-    Adds a dense (non-sparse) data file to a loom file
+    Adds a flat file (csv, tsv) to loom file
     
     Args:
         count_file (str): Path to count data
@@ -49,9 +49,9 @@ def add_dense(count_file,
             If None, auto-generated
             Same as Accession in loom documentation
         layer_id (str): Name of layer to add count data to in loom_file
-        sep (str): File delimiter. Same convention as pandas.read_table
+        sep (str): File delimiter. Same convention as pandas.read_csv
         verbose (bool): If true, print logging messages
-        **kwargs: Keyword arguments for pandas.read_table
+        **kwargs: Keyword arguments for pandas.read_csv
     
     Returns:
         Generates loom file with:
@@ -67,13 +67,13 @@ def add_dense(count_file,
         io_log.info('Adding {0} to {1}'.format(count_file, loom_file))
     # Read data
     if feature_axis == 0 or 'row' in feature_axis:
-        dat = pd.read_table(filepath_or_buffer=count_file,
+        dat = pd.read_csv(filepath_or_buffer=count_file,
                             sep=sep,
                             header=observation_id,
                             index_col=feature_id,
                             **kwargs)
     elif feature_axis == 1 or 'col' in feature_axis:
-        dat = pd.read_table(filepath_or_buffer=count_file,
+        dat = pd.read_csv(filepath_or_buffer=count_file,
                             sep=sep,
                             header=feature_id,
                             index_col=observation_id,

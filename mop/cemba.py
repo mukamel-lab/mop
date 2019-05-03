@@ -219,7 +219,7 @@ def read_atac_qc(base_dir,
             curr_sample = os.path.basename(replicate)
             rep_file = '{0}/qc/{1}.cell.qc.tsv'.format(replicate,
                                                        curr_sample)
-            tmp_qc = pd.read_table(rep_file,
+            tmp_qc = pd.read_csv(rep_file,
                                    sep='\t',
                                    header=0,
                                    index_col=0)
@@ -357,7 +357,7 @@ def add_gene_information(loom_file,
     
     
     """
-    genes = pd.read_table(gene_file,
+    genes = pd.read_csv(gene_file,
                           sep='\t',
                           header=0,
                           index_col=0)
@@ -385,8 +385,8 @@ def merge_bins_cell(filename,
         merge_bins (int): Proposed size of bins
         double_x (bool): If true, double size of bins on X chromosome
         chr_prefix (bool): If true, expects chromosomes to start with chr
-        sep (str): File separator (follows pandas read_table convention)
-        compression (str): File compression (pandas read_table convention)
+        sep (str): File separator (follows pandas read_csv convention)
+        compression (str): File compression (pandas read_csv convention)
         
     Returns:
         binc (dataframe): Dataframe with adjusted bin sizes
@@ -403,7 +403,7 @@ def merge_bins_cell(filename,
         raise ValueError(
             '{0} is not divisible by {1}'.format(merge_bins, curr_bins))
     # Read file
-    df = pd.read_table(filename,
+    df = pd.read_csv(filename,
                        sep=sep,
                        compression=compression,
                        header=0,
@@ -472,8 +472,8 @@ def sample_to_loom(sample_file,
             If curr_bins and merge_bins are provided, merges bins to this size
         double_x (bool): If merging bins, doubles size of bins on X chromosome
         chr_prefix (bool): If true, expects chr prefix on chromosomes
-        sep (str): File separator (follows pandas read_table convention)
-        compression (str): File compression (pandas read_table convention)
+        sep (str): File separator (follows pandas read_csv convention)
+        compression (str): File compression (pandas read_csv convention)
 
     Assumptions:
         Expects standard CEMBA methylation file format for a single cell
@@ -501,7 +501,7 @@ def sample_to_loom(sample_file,
                                        sep=sep,
                                        compression=compression)
         else:
-            count_df = pd.read_table(sample_file,
+            count_df = pd.read_csv(sample_file,
                                      sep=sep,
                                      compression=compression,
                                      header=0,
@@ -511,7 +511,7 @@ def sample_to_loom(sample_file,
             str)
         row_attrs = {'Accession': count_df['Accession'].values}
     else:
-        count_df = pd.read_table(sample_file,
+        count_df = pd.read_csv(sample_file,
                                  sep=sep,
                                  compression=compression,
                                  header=0,
@@ -574,8 +574,8 @@ def cemba_samples_to_loom(base_dir,
             If curr_bins and merge_bins are provided, merges bins to this size
         double_x (bool): If merging bins, doubles size of bins on X chromosome
         chr_prefix (bool): If true, expects chr prefix on chromosomes
-        sep (str): File separator (follows pandas read_table convention)
-        compression (str): File compression (pandas read_table convention)
+        sep (str): File separator (follows pandas read_csv convention)
+        compression (str): File compression (pandas read_csv convention)
         verbose (bool): If true, print logging messages
     """
     # Error check
@@ -673,9 +673,9 @@ def ensemble_to_loom(ensemble_file,
         loom_file (str): Path to output loom file
         layer_label (str): Label for layer in loom_file
         bins (boolean): If true, ensemble_file contains bin counts
-        sep (str): File separator (follows pandas read_table convention)
+        sep (str): File separator (follows pandas read_csv convention)
         append (bool): Adds cells from ensemble_file to existing loom_file
-        compression (str): File compression (pandas read_table convention)
+        compression (str): File compression (pandas read_csv convention)
         verbose (boolean): If true, prints helpful logging messages
     
     Assumptions:
@@ -695,7 +695,7 @@ def ensemble_to_loom(ensemble_file,
         ra = 'Accession'
     if verbose:
         cemba_log.info('Loading {0} file: {1}'.format(msg, ensemble_file))
-    df = pd.read_table(ensemble_file,
+    df = pd.read_csv(ensemble_file,
                        sep=sep,
                        header=0,
                        index_col=index_col,
@@ -782,7 +782,7 @@ def read_methylation_qc(base_dir,
         samples = [samples]
     qc_df = []
     for sample in samples:
-        tmp_qc = pd.read_table(
+        tmp_qc = pd.read_csv(
             '{0}/{1}/mapping_summary_{1}.tsv'.format(base_dir, sample),
             sep='\t',
             header=0,
@@ -1071,9 +1071,9 @@ def allen_smarter(count_file,
         gene_file (str): Tab-delimited file containing gene name's and IDs
         append (bool): If true, append data. If false, generate new file
         layer_id (str): Name of layer to add count data to in loom_file
-        sep (str): File delimiter. Same convention as pandas.read_table
+        sep (str): File delimiter. Same convention as pandas.read_csv
         verbose (bool): If true, print logging messages
-        **kwargs: Keyword arguments for pandas.read_table
+        **kwargs: Keyword arguments for pandas.read_csv
     
     Returns:
         Generates loom file with:
@@ -1091,13 +1091,13 @@ def allen_smarter(count_file,
     if verbose:
         cemba_log.info('Adding {0} to {1}'.format(count_file, loom_file))
     # Read data
-    dat = pd.read_table(filepath_or_buffer=count_file,
+    dat = pd.read_csv(filepath_or_buffer=count_file,
                         sep=sep,
                         header=0,
                         index_col=0,
                         **kwargs)
     # Get gene information
-    genes = pd.read_table(gene_file,
+    genes = pd.read_csv(gene_file,
                           sep='\t',
                           header=0,
                           index_col=1)
