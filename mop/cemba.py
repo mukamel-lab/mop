@@ -181,7 +181,7 @@ def atac_samples_to_loom(base_dir,
                               col_attrs={'CellID': cells})
                 first_iter = False
             else:
-                io.batch_add_sparse(loom_file=loom_file,
+                helpers.batch_add_sparse(loom_file=loom_file,
                                     layers={'counts': dat},
                                     row_attrs=row_attrs,
                                     col_attrs={'CellID': cells},
@@ -1223,7 +1223,7 @@ def cemba_h5_to_loom(h5_file,
                      'Accession': dsets['gene'].astype(str)}
         col_attrs = {'CellID': dsets['barcodes'].astype(str)}
         layers = {'counts': matrix}
-        io.batch_add_sparse(loom_file=loom_file,
+        helpers.batch_add_sparse(loom_file=loom_file,
                             layers=layers,
                             row_attrs=row_attrs,
                             col_attrs=col_attrs,

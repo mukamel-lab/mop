@@ -121,75 +121,6 @@ def add_csv(count_file,
                           row_attrs={'Accession': loom_feat},
                           col_attrs={'CellID': loom_obs})
 
-
-def batch_add_sparse(loom_file,
-                     layers,
-                     row_attrs,
-                     col_attrs,
-                     append=False,
-                     empty_base=False,
-                     batch_size=512,
-                     verbose=False):
-    """
-    Batch adds sparse matrices to a loom file
-    
-    Args:
-        loom_file (str): Path to output loom file
-        layers (dict): Keys are names of layers, values are matrices to include
-            Matrices should be features by observations
-        row_attrs (dict): Attributes for rows in loom file
-        col_attrs (dict): Attributes for columns in loom file
-        append (bool): If true, append new cells. If false, overwrite file
-        empty_base (bool): If true, add an empty array to the base layer
-        batch_size (int): Size of batches of cells to add
-        verbose (bool): Print logging messages
-    """
-    # Check layers
-    if verbose:
-        t0 = time.time()
-        io_log.info('Adding data to loom_file {}'.format(loom_file))
-    feats = set([])
-    obs = set([])
-    for key in layers:
-        if not sparse.issparse(layers[key]):
-            raise ValueError('Expects sparse matrix input')
-        feats.add(layers[key].shape[0])
-        obs.add(layers[key].shape[1])
-    if len(feats) != 1 or len(obs) != 1:
-        raise ValueError('Matrix dimension mismatch')
-    # Get size of batches
-    obs_size = list(obs)[0]
-    feat_size = list(feats)[0]
-    batches = np.array_split(np.arange(start=0,
-                                       stop=obs_size,
-                                       step=1),
-                             np.ceil(obs_size / batch_size))
-    for batch in batches:
-        batch_layer = dict()
-        if empty_base:
-            batch_layer[''] = np.zeros((feat_size, batch.shape[0]), dtype=int)
-        for key in layers:
-            batch_layer[key] = layers[key].tocsc()[:, batch].toarray()
-        batch_col = dict()
-        for key in col_attrs:
-            batch_col[key] = col_attrs[key][batch]
-        if append:
-            with loompy.connect(filename=loom_file) as ds:
-                ds.add_columns(layers=batch_layer,
-                               row_attrs=row_attrs,
-                               col_attrs=batch_col)
-        else:
-            loompy.create(filename=loom_file,
-                          layers=batch_layer,
-                          row_attrs=row_attrs,
-                          col_attrs=batch_col)
-            append = True
-    if verbose:
-        t1 = time.time()
-        time_run, time_fmt = general_utils.format_run_time(t0, t1)
-        io_log.info('Wrote loom file in {0:.2f} {1}'.format(time_run, time_fmt))
-
-
 def cellranger_bc_h5_to_loom(h5_file,
                              loom_file,
                              barcode_prefix=None,
@@ -250,7 +181,7 @@ def cellranger_bc_h5_to_loom(h5_file,
         for key in tag_keys:
             row_attrs[key] = getattr(feature_group, key).read().astype(str)
     # Make loom file
-    batch_add_sparse(loom_file=loom_file,
+    helpers.batch_add_sparse(loom_file=loom_file,
                      layers=layers,
                      row_attrs=row_attrs,
                      col_attrs=col_attrs,
