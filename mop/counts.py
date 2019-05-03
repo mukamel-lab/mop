@@ -41,15 +41,15 @@ def add_feature_length(loom_file,
     """
     # Read bed file
     bed_df = pd.read_csv(bed_file,
-                           sep='\t',
-                           header=None,
-                           index_col=None,
-                           usecols=[0, 1, 2, 3],
-                           names=['chr', 'start', 'stop', 'id'],
-                           dtype={'chr': str,
-                                  'start': int,
-                                  'stop': int,
-                                  'id': str})
+                         sep='\t',
+                         header=None,
+                         index_col=None,
+                         usecols=[0, 1, 2, 3],
+                         names=['chr', 'start', 'stop', 'id'],
+                         dtype={'chr': str,
+                                'start': int,
+                                'stop': int,
+                                'id': str})
     bed_df['length'] = np.abs(bed_df['stop'] - bed_df['start'])
     bed_df = bed_df.set_index(keys='id', drop=True)
     # Get IDs from loom file

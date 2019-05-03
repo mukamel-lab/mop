@@ -139,21 +139,21 @@ def smooth_counts(loom_file,
         if w_graph is None:
             w_graph = 'W'
         helpers.compute_markov(loom_file=loom_file,
-                          neighbor_attr=neighbor_attr,
-                          distance_attr=distance_attr,
-                          out_graph=w_graph,
-                          valid_ca=valid_ca,
-                          k=k,
-                          ka=ka,
-                          epsilon=epsilon,
-                          p=p,
-                          verbose=verbose)
+                               neighbor_attr=neighbor_attr,
+                               distance_attr=distance_attr,
+                               out_graph=w_graph,
+                               valid_ca=valid_ca,
+                               k=k,
+                               ka=ka,
+                               epsilon=epsilon,
+                               p=p,
+                               verbose=verbose)
     # Smooth counts
     helpers.perform_smoothing(loom_file=loom_file,
-                         in_layer=observed_layer,
-                         out_layer=smoothed_layer,
-                         w_graph=w_graph,
-                         verbose=verbose)
+                              in_layer=observed_layer,
+                              out_layer=smoothed_layer,
+                              w_graph=w_graph,
+                              verbose=verbose)
 
 
 def smooth_methylation(loom_file,
@@ -372,16 +372,16 @@ def smooth_methylation(loom_file,
 
     # Generate Markov matrix
     if gen_w:
-        neighbors.compute_markov(loom_file=loom_file,
-                                 neighbor_attr=neighbor_attr,
-                                 distance_attr=distance_attr,
-                                 out_graph=w_graph,
-                                 valid_ca=valid_ca,
-                                 k=k,
-                                 ka=ka,
-                                 epsilon=epsilon,
-                                 p=p,
-                                 verbose=verbose)
+        helpers.compute_markov(loom_file=loom_file,
+                               neighbor_attr=neighbor_attr,
+                               distance_attr=distance_attr,
+                               out_graph=w_graph,
+                               valid_ca=valid_ca,
+                               k=k,
+                               ka=ka,
+                               epsilon=epsilon,
+                               p=p,
+                               verbose=verbose)
     for i in range(len(obs_mcc)):
         # Smooth data
         tmp_in = [obs_mc[i], obs_c[i]]
@@ -623,16 +623,16 @@ def smooth_rna(loom_file,
 
     # Generate Markov matrix
     if gen_w:
-        neighbors.compute_markov(loom_file=loom_file,
-                                 neighbor_attr=neighbor_attr,
-                                 distance_attr=distance_attr,
-                                 out_graph=w_graph,
-                                 valid_ca=valid_cells,
-                                 k=k,
-                                 ka=ka,
-                                 epsilon=epsilon,
-                                 p=p,
-                                 verbose=verbose)
+        helpers.compute_markov(loom_file=loom_file,
+                               neighbor_attr=neighbor_attr,
+                               distance_attr=distance_attr,
+                               out_graph=w_graph,
+                               valid_ca=valid_cells,
+                               k=k,
+                               ka=ka,
+                               epsilon=epsilon,
+                               p=p,
+                               verbose=verbose)
     # Smooth data
     smooth_counts(loom_file=loom_file,
                   valid_ca=valid_cells,

@@ -280,6 +280,7 @@ def prep_pca_contexts(view,
     comb_layers = comb_layers.transpose()
     return comb_layers
 
+
 # io
 def batch_add_sparse(loom_file,
                      layers,
@@ -306,7 +307,7 @@ def batch_add_sparse(loom_file,
     # Check layers
     if verbose:
         t0 = time.time()
-        io_log.info('Adding data to loom_file {}'.format(loom_file))
+        helper_log.info('Adding data to loom_file {}'.format(loom_file))
     feats = set([])
     obs = set([])
     for key in layers:
@@ -346,7 +347,9 @@ def batch_add_sparse(loom_file,
     if verbose:
         t1 = time.time()
         time_run, time_fmt = general_utils.format_run_time(t0, t1)
-        io_log.info('Wrote loom file in {0:.2f} {1}'.format(time_run, time_fmt))
+        helper_log.info(
+            'Wrote loom file in {0:.2f} {1}'.format(time_run, time_fmt))
+
 
 # Plots
 def get_random_colors(n):

@@ -69,16 +69,16 @@ def add_csv(count_file,
     # Read data
     if feature_axis == 0 or 'row' in feature_axis:
         dat = pd.read_csv(filepath_or_buffer=count_file,
-                            sep=sep,
-                            header=observation_id,
-                            index_col=feature_id,
-                            **kwargs)
+                          sep=sep,
+                          header=observation_id,
+                          index_col=feature_id,
+                          **kwargs)
     elif feature_axis == 1 or 'col' in feature_axis:
         dat = pd.read_csv(filepath_or_buffer=count_file,
-                            sep=sep,
-                            header=feature_id,
-                            index_col=observation_id,
-                            **kwargs)
+                          sep=sep,
+                          header=feature_id,
+                          index_col=observation_id,
+                          **kwargs)
         dat = dat.T
     else:
         err_msg = 'Unsupported feature_axis ({})'.format(feature_axis)
@@ -121,6 +121,7 @@ def add_csv(count_file,
                           layers={layer_id: dat},
                           row_attrs={'Accession': loom_feat},
                           col_attrs={'CellID': loom_obs})
+
 
 def add_cellranger(h5_file,
                    loom_file,
@@ -183,13 +184,14 @@ def add_cellranger(h5_file,
             row_attrs[key] = getattr(feature_group, key).read().astype(str)
     # Make loom file
     helpers.batch_add_sparse(loom_file=loom_file,
-                     layers=layers,
-                     row_attrs=row_attrs,
-                     col_attrs=col_attrs,
-                     append=append,
-                     empty_base=True,
-                     batch_size=batch_size,
-                     verbose=verbose)
+                             layers=layers,
+                             row_attrs=row_attrs,
+                             col_attrs=col_attrs,
+                             append=append,
+                             empty_base=True,
+                             batch_size=batch_size,
+                             verbose=verbose)
+
 
 def copy_loom(old_loom,
               new_loom,
