@@ -17,6 +17,7 @@ import time
 from shutil import copyfile
 from . import general_utils
 from . import loom_utils
+from . import helpers
 
 # Start log
 io_log = logging.getLogger(__name__)
@@ -121,12 +122,12 @@ def add_csv(count_file,
                           row_attrs={'Accession': loom_feat},
                           col_attrs={'CellID': loom_obs})
 
-def cellranger_bc_h5_to_loom(h5_file,
-                             loom_file,
-                             barcode_prefix=None,
-                             append=False,
-                             batch_size=512,
-                             verbose=False):
+def add_cellranger(h5_file,
+                   loom_file,
+                   barcode_prefix=None,
+                   append=False,
+                   batch_size=512,
+                   verbose=False):
     """
     Converts a 10x formatted H5 file into the loom format
 
@@ -189,7 +190,6 @@ def cellranger_bc_h5_to_loom(h5_file,
                      empty_base=True,
                      batch_size=batch_size,
                      verbose=verbose)
-
 
 def copy_loom(old_loom,
               new_loom,
