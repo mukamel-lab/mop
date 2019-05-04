@@ -7,7 +7,6 @@ Written by Wayne Doyle
 import loompy
 import pandas as pd
 import numpy as np
-import re
 import time
 import glob
 import os
@@ -16,7 +15,7 @@ from scipy import sparse
 import re
 import tables
 import logging
-from . import io
+from . import helpers
 from . import loom_utils
 from . import general_utils
 from . import counts
@@ -182,13 +181,13 @@ def atac_samples_to_loom(base_dir,
                               col_attrs={'CellID': cells})
                 first_iter = False
             else:
-                io.batch_add_sparse(loom_file=loom_file,
-                                    layers={'counts': dat},
-                                    row_attrs=row_attrs,
-                                    col_attrs={'CellID': cells},
-                                    append=True,
-                                    empty_base=True,
-                                    batch_size=batch_size)
+                helpers.batch_add_sparse(loom_file=loom_file,
+                                         layers={'counts': dat},
+                                         row_attrs=row_attrs,
+                                         col_attrs={'CellID': cells},
+                                         append=True,
+                                         empty_base=True,
+                                         batch_size=batch_size)
     if verbose:
         t1 = time.time()
         time_run, time_fmt = general_utils.format_run_time(t0, t1)
@@ -220,10 +219,10 @@ def read_atac_qc(base_dir,
             curr_sample = os.path.basename(replicate)
             rep_file = '{0}/qc/{1}.cell.qc.tsv'.format(replicate,
                                                        curr_sample)
-            tmp_qc = pd.read_table(rep_file,
-                                   sep='\t',
-                                   header=0,
-                                   index_col=0)
+            tmp_qc = pd.read_csv(rep_file,
+                                 sep='\t',
+                                 header=0,
+                                 index_col=0)
             tmp_qc.index = gen_atac_barcode(
                 barcodes=tmp_qc.index.values.astype(str),
                 sample=curr_sample)
@@ -260,6 +259,8 @@ def add_atac_qc(loom_file,
         spectrum (float): Mininum log10(power density)
         feat_min (int): Mininum number of counts for feat_cov
         feat_cov (float): Mininum percentage of cells with at least feat_min
+        cell_min (int): Mininum number of features with counts per cell
+        cell_cov (float): Mininum fraction of features with cell_min per cell
         batch_size (int): Number of elements per chunk
         verbose (bool): If true, print logging messages
 
@@ -289,7 +290,7 @@ def add_atac_qc(loom_file,
         for (_, selection, view) in ds.scan(layers=layers,
                                             batch_size=batch_size,
                                             axis=1):
-            min_num = np.sum(view.layers[layer][:, :] >= cell_min,axis=0)
+            min_num = np.sum(view.layers[layer][:, :] >= cell_min, axis=0)
             if cell_cov is None:
                 qc_three[selection] = (min_num / view.shape[0]) > 0
             else:
@@ -299,7 +300,7 @@ def add_atac_qc(loom_file,
         qc_row = np.zeros((ds.shape[0],), dtype=bool)
         for (_, selection, view) in ds.scan(layers=layers,
                                             batch_size=batch_size,
-                                            axis = 0):
+                                            axis=0):
             min_num = np.sum(view.layers[layer][:, :] >= feat_min, axis=1)
             if feat_cov is None:
                 qc_row[selection] = (min_num / view.shape[1]) > 0
@@ -358,10 +359,10 @@ def add_gene_information(loom_file,
     
     
     """
-    genes = pd.read_table(gene_file,
-                          sep='\t',
-                          header=0,
-                          index_col=0)
+    genes = pd.read_csv(gene_file,
+                        sep='\t',
+                        header=0,
+                        index_col=0)
     with loompy.connect(loom_file) as ds:
         gids = ds.ra[id_attr]
         genes = genes.loc[gids]
@@ -386,8 +387,8 @@ def merge_bins_cell(filename,
         merge_bins (int): Proposed size of bins
         double_x (bool): If true, double size of bins on X chromosome
         chr_prefix (bool): If true, expects chromosomes to start with chr
-        sep (str): File separator (follows pandas read_table convention)
-        compression (str): File compression (pandas read_table convention)
+        sep (str): File separator (follows pandas read_csv convention)
+        compression (str): File compression (pandas read_csv convention)
         
     Returns:
         binc (dataframe): Dataframe with adjusted bin sizes
@@ -404,12 +405,12 @@ def merge_bins_cell(filename,
         raise ValueError(
             '{0} is not divisible by {1}'.format(merge_bins, curr_bins))
     # Read file
-    df = pd.read_table(filename,
-                       sep=sep,
-                       compression=compression,
-                       header=0,
-                       index_col=None,
-                       dtype=bin_dtype)
+    df = pd.read_csv(filename,
+                     sep=sep,
+                     compression=compression,
+                     header=0,
+                     index_col=None,
+                     dtype=bin_dtype)
     # Get chromosomes
     chrom_lengths = general_utils.get_mouse_chroms(prefix=chr_prefix,
                                                    include_y=False)
@@ -473,8 +474,8 @@ def sample_to_loom(sample_file,
             If curr_bins and merge_bins are provided, merges bins to this size
         double_x (bool): If merging bins, doubles size of bins on X chromosome
         chr_prefix (bool): If true, expects chr prefix on chromosomes
-        sep (str): File separator (follows pandas read_table convention)
-        compression (str): File compression (pandas read_table convention)
+        sep (str): File separator (follows pandas read_csv convention)
+        compression (str): File compression (pandas read_csv convention)
 
     Assumptions:
         Expects standard CEMBA methylation file format for a single cell
@@ -502,22 +503,22 @@ def sample_to_loom(sample_file,
                                        sep=sep,
                                        compression=compression)
         else:
-            count_df = pd.read_table(sample_file,
-                                     sep=sep,
-                                     compression=compression,
-                                     header=0,
-                                     index_col=None,
-                                     dtype=gene_dtype)
+            count_df = pd.read_csv(sample_file,
+                                   sep=sep,
+                                   compression=compression,
+                                   header=0,
+                                   index_col=None,
+                                   dtype=gene_dtype)
         count_df['Accession'] = count_df['chr'] + '_' + count_df['bin'].astype(
             str)
         row_attrs = {'Accession': count_df['Accession'].values}
     else:
-        count_df = pd.read_table(sample_file,
-                                 sep=sep,
-                                 compression=compression,
-                                 header=0,
-                                 index_col=None,
-                                 dtype=gene_dtype)
+        count_df = pd.read_csv(sample_file,
+                               sep=sep,
+                               compression=compression,
+                               header=0,
+                               index_col=None,
+                               dtype=gene_dtype)
         row_attrs = {'Accession': count_df['gene_id'].values}
     # Get column attributes
     col_attrs = {'CellID': cell_id,
@@ -575,8 +576,8 @@ def cemba_samples_to_loom(base_dir,
             If curr_bins and merge_bins are provided, merges bins to this size
         double_x (bool): If merging bins, doubles size of bins on X chromosome
         chr_prefix (bool): If true, expects chr prefix on chromosomes
-        sep (str): File separator (follows pandas read_table convention)
-        compression (str): File compression (pandas read_table convention)
+        sep (str): File separator (follows pandas read_csv convention)
+        compression (str): File compression (pandas read_csv convention)
         verbose (bool): If true, print logging messages
     """
     # Error check
@@ -674,9 +675,9 @@ def ensemble_to_loom(ensemble_file,
         loom_file (str): Path to output loom file
         layer_label (str): Label for layer in loom_file
         bins (boolean): If true, ensemble_file contains bin counts
-        sep (str): File separator (follows pandas read_table convention)
+        sep (str): File separator (follows pandas read_csv convention)
         append (bool): Adds cells from ensemble_file to existing loom_file
-        compression (str): File compression (pandas read_table convention)
+        compression (str): File compression (pandas read_csv convention)
         verbose (boolean): If true, prints helpful logging messages
     
     Assumptions:
@@ -696,12 +697,12 @@ def ensemble_to_loom(ensemble_file,
         ra = 'Accession'
     if verbose:
         cemba_log.info('Loading {0} file: {1}'.format(msg, ensemble_file))
-    df = pd.read_table(ensemble_file,
-                       sep=sep,
-                       header=0,
-                       index_col=index_col,
-                       compression=compression,
-                       dtype=str)
+    df = pd.read_csv(ensemble_file,
+                     sep=sep,
+                     header=0,
+                     index_col=index_col,
+                     compression=compression,
+                     dtype=str)
     if verbose:
         t_load = time.time()
         time_run, time_fmt = general_utils.format_run_time(t_start, t_load)
@@ -783,7 +784,7 @@ def read_methylation_qc(base_dir,
         samples = [samples]
     qc_df = []
     for sample in samples:
-        tmp_qc = pd.read_table(
+        tmp_qc = pd.read_csv(
             '{0}/{1}/mapping_summary_{1}.tsv'.format(base_dir, sample),
             sep='\t',
             header=0,
@@ -1072,9 +1073,9 @@ def allen_smarter(count_file,
         gene_file (str): Tab-delimited file containing gene name's and IDs
         append (bool): If true, append data. If false, generate new file
         layer_id (str): Name of layer to add count data to in loom_file
-        sep (str): File delimiter. Same convention as pandas.read_table
+        sep (str): File delimiter. Same convention as pandas.read_csv
         verbose (bool): If true, print logging messages
-        **kwargs: Keyword arguments for pandas.read_table
+        **kwargs: Keyword arguments for pandas.read_csv
     
     Returns:
         Generates loom file with:
@@ -1092,16 +1093,16 @@ def allen_smarter(count_file,
     if verbose:
         cemba_log.info('Adding {0} to {1}'.format(count_file, loom_file))
     # Read data
-    dat = pd.read_table(filepath_or_buffer=count_file,
-                        sep=sep,
-                        header=0,
-                        index_col=0,
-                        **kwargs)
+    dat = pd.read_csv(filepath_or_buffer=count_file,
+                      sep=sep,
+                      header=0,
+                      index_col=0,
+                      **kwargs)
     # Get gene information
-    genes = pd.read_table(gene_file,
-                          sep='\t',
-                          header=0,
-                          index_col=1)
+    genes = pd.read_csv(gene_file,
+                        sep='\t',
+                        header=0,
+                        index_col=1)
     gns = pd.DataFrame(np.arange(dat.shape[0]),
                        index=dat.index.values)
     gns.columns = ['fake']
@@ -1224,13 +1225,13 @@ def cemba_h5_to_loom(h5_file,
                      'Accession': dsets['gene'].astype(str)}
         col_attrs = {'CellID': dsets['barcodes'].astype(str)}
         layers = {'counts': matrix}
-        io.batch_add_sparse(loom_file=loom_file,
-                            layers=layers,
-                            row_attrs=row_attrs,
-                            col_attrs=col_attrs,
-                            append=False,
-                            empty_base=True,
-                            batch_size=batch_size)
+        helpers.batch_add_sparse(loom_file=loom_file,
+                                 layers=layers,
+                                 row_attrs=row_attrs,
+                                 col_attrs=col_attrs,
+                                 append=False,
+                                 empty_base=True,
+                                 batch_size=batch_size)
         if verbose:
             t_end = time.time()
             time_run, time_fmt = general_utils.format_run_time(t_write,

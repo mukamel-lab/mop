@@ -1,26 +1,357 @@
 """
-Collection of functions used to generate plots
-    
+Collection of functions called by other modules. Typical users will not need to
+use these functions
+
 Written by Wayne Doyle unless otherwise noted
 
-(C) 2018 Mukamel Lab GPLv2
-
+(C) 2019 Mukamel Lab GPLv2
 """
-
-import loompy
-import numpy as np
+import louvain
+import leidenalg
 import pandas as pd
-import logging
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 import seaborn as sns
-from . import general_utils
+import numpy as np
+from scipy import sparse
+import time
+import logging
+import loompy
+import gc
+from . import neighbors
 from . import loom_utils
+from . import general_utils
 
 # Start log
-ph_log = logging.getLogger(__name__)
+helper_log = logging.getLogger(__name__)
 
 
+# Clustering helpers
+def clustering_from_graph(loom_file,
+                          graph_attr,
+                          clust_attr='ClusterID',
+                          cell_attr='CellID',
+                          valid_ca=None,
+                          algorithm="leiden",
+                          resolution=1.0,
+                          n_iter=2,
+                          num_starts=None,
+                          directed=True,
+                          seed=23,
+                          verbose=False):
+    """
+    Performs clustering on a given weighted adjacency matrix
+
+    Args:
+        loom_file (str): Path to loom file
+        graph_attr (str): Name of col_graphs object in loom_file containing kNN
+        clust_attr (str): Name of attribute specifying clusters
+        cell_attr (str): Name of attribute containing cell identifiers
+        valid_ca (str): Name of attribute specifying cells to use
+        algorithm (str): Specifies which clustering algorithm to use
+            values can be 'louvain' or 'leiden'. Both algorithms are performed
+            through maximizing the modularity of the jacard weighted neighbor
+            graph
+        resolution (float): a greater resolution results in more fine
+            grained clusters
+        n_iter (int) : for leiden algorithm only, the number of iterations
+            to further optimize the modularity of the partition
+        num_starts (int) : a number of times to run clustering with different
+            random seeds, returning the one with the highest modularity
+            unsupported for louvain
+        directed (bool): If true, graph should be directed
+        seed (int): Seed for random processes
+        verbose (bool): If true, print logging messages
+
+    Returns:
+        clusts (1D array): Cluster identities for cells in adj_mtx
+
+    Adapted from code written by Fangming Xie
+    """
+    if algorithm in ['louvain', 'leiden']:
+        pass
+    else:
+        err_msg = 'Only supported algorithms are louvain and leiden'
+        if verbose:
+            helper_log.error(err_msg)
+        raise ValueError(err_msg)
+    col_idx = loom_utils.get_attr_index(loom_file=loom_file,
+                                        attr=valid_ca,
+                                        columns=True,
+                                        as_bool=False,
+                                        inverse=False)
+    with loompy.connect(loom_file) as ds:
+        adj_mtx = ds.col_graphs[graph_attr]
+    adj_mtx = adj_mtx.tocsr()[col_idx, :][:, col_idx]
+    if adj_mtx.shape[0] != adj_mtx.shape[1]:
+        err_msg = 'Adjacency matrix must be symmetrical'
+        if verbose:
+            helper_log.error(err_msg)
+        raise ValueError(err_msg)
+    # Generate graph
+    if verbose:
+        t0 = time.time()
+        helper_log.info('Converting to igraph')
+    g = neighbors.adjacency_to_igraph(adj_mtx=adj_mtx,
+                                      directed=directed)
+    if verbose:
+        t1 = time.time()
+        time_run, time_fmt = general_utils.format_run_time(t0, t1)
+        helper_log.info(
+            'Converted to igraph in {0:.2f} {1}'.format(time_run, time_fmt))
+    # Cluster
+    if verbose:
+        helper_log.info('Performing clustering with {}'.format(algorithm))
+
+    if algorithm.lower() == 'leiden':
+        if num_starts is not None:
+            np.random.seed(seed)
+            partitions = []
+            quality = []
+            seeds = np.random.randint(300, size=num_starts)
+            for seed in seeds:
+                temp_partition = leidenalg.find_partition(g,
+                                                          leidenalg.RBConfigurationVertexPartition,
+                                                          weights=g.es[
+                                                              'weight'],
+                                                          resolution_parameter=resolution,
+                                                          seed=seed,
+                                                          n_iterations=n_iter)
+                quality.append(temp_partition.quality())
+                partitions.append(temp_partition)
+            partition1 = partitions[np.argmax(quality)]
+        else:
+            partition1 = leidenalg.find_partition(g,
+                                                  leidenalg.RBConfigurationVertexPartition,
+                                                  weights=g.es['weight'],
+                                                  resolution_parameter=resolution,
+                                                  seed=seed,
+                                                  n_iterations=n_iter)
+    elif algorithm.lower() == 'louvain':
+        if num_starts is not None:
+            helper_log.info('multiple starts unsupported for Louvain algorithm')
+        if seed is not None:
+            louvain.set_rng_seed(seed)
+        partition1 = louvain.find_partition(g,
+                                            louvain.RBConfigurationVertexPartition,
+                                            weights=g.es['weight'],
+                                            resolution_parameter=resolution)
+    else:
+        err_msg = 'Algorithm value ({}) is not supported'.format(algorithm)
+        if verbose:
+            helper_log.error(err_msg)
+        raise ValueError(err_msg)
+    # Get cluster IDs
+    clusts = np.empty((adj_mtx.shape[0],), dtype=int)
+    clusts[:] = np.nan
+    for i, cluster in enumerate(partition1):
+        for element in cluster:
+            clusts[element] = i + 1
+    # Add labels to loom_file
+    with loompy.connect(loom_file) as ds:
+        labels = pd.DataFrame(np.repeat('Fake', ds.shape[1]),
+                              index=ds.ca[cell_attr],
+                              columns=['Orig'])
+        if valid_ca:
+            valid_idx = ds.ca[valid_ca].astype(bool)
+        else:
+            valid_idx = np.ones((ds.shape[1],), dtype=bool)
+        clusts = pd.DataFrame(clusts,
+                              index=ds.ca[cell_attr][valid_idx],
+                              columns=['Mod'])
+        labels = pd.merge(labels,
+                          clusts,
+                          left_index=True,
+                          right_index=True,
+                          how='left')
+        labels = labels.fillna(value='Noise')
+        labels = labels['Mod'].values.astype(str)
+        ds.ca[clust_attr] = labels
+    if verbose:
+        t2 = time.time()
+        time_run, time_fmt = general_utils.format_run_time(t1, t2)
+        helper_log.info(
+            'Clustered cells in {0:.2f} {1}'.format(time_run, time_fmt))
+
+
+# Decomposition helpers
+def check_pca_batches(loom_file,
+                      n_pca=50,
+                      batch_size=512,
+                      verbose=False):
+    """
+    Checks and adjusts batch size for PCA
+
+    Args:
+        loom_file (str): Path to loom file
+        n_pca (int): Number of components for PCA
+        batch_size (int): Size of chunks
+        verbose (bool): Print logging messages
+
+    Returns:
+        batch_size (int): Updated batch size to work with PCA
+    """
+    # Get the number of cells
+    with loompy.connect(loom_file) as ds:
+        num_total = ds.shape[1]
+    # Check if batch_size and PCA are even reasonable
+    if num_total < n_pca:
+        helper_log.error(
+            'More PCA components {0} than samples {1}'.format(n_pca,
+                                                              num_total))
+    if batch_size < n_pca:
+        batch_size = n_pca
+    # Adjust based on expected size
+    mod_total = num_total % batch_size
+    adjusted_batch = False
+    if mod_total < n_pca:
+        adjusted_batch = True
+        batch_size = batch_size - n_pca + mod_total
+    if batch_size < n_pca:
+        batch_size = num_total
+    # Report to user
+    if verbose and adjusted_batch:
+        helper_log.info('Adjusted batch size to {0} for PCA'.format(batch_size))
+    # Return value
+    return batch_size
+
+
+def prep_pca(view,
+             layer,
+             row_idx,
+             scale_attr=None):
+    """
+    Performs data processing for PCA on a given layer
+
+    Args:
+        view (object): Slice of loom file
+        layer (str): Layer in view
+        row_idx (array): Features to use
+        scale_attr (str): If true, scale cells by this attribute
+            Typically used in snmC-seq to scale by a cell's mC/C
+
+    Returns:
+        dat (matrix): Scaled data for PCA
+    """
+    dat = view.layers[layer][row_idx, :].copy()
+    if scale_attr is not None:
+        rel_scale = view.ca[scale_attr]
+        dat = np.divide(dat, rel_scale)
+    dat = dat.transpose()
+    return dat
+
+
+def prep_pca_contexts(view,
+                      layer_dict,
+                      cell_dict=None,
+                      global_dict=None,
+                      row_dict=None):
+    """
+    Performs data processing for PCA with multiple contexts
+
+    Args:
+        view (object): Slice of loom file
+        layer_dict (dict): Dictionary of layers to include
+        cell_dict (dict): Attribute containing per cell levels
+            Typically, used with methylation (cell's global mC/C)
+        global_dict (dict): Context specific scale
+            Typically this is the std over all cells/features
+        row_dict (dict): Context specific attributes to restrict features by
+
+    Returns:
+        comb_layers (matrix): Combined, scaled data
+    """
+
+    # Handle individual layers
+    comb_layers = []
+    for key in layer_dict:
+        layer = layer_dict[key]
+        row_idx = row_dict[key]
+        tmp = view.layers[layer][row_idx, :].copy()
+        if cell_dict:
+            rel_scale = view.ca[cell_dict[key]]
+            tmp = np.divide(tmp, rel_scale)
+        if global_dict:
+            tmp = tmp / global_dict[key]
+        comb_layers.append(tmp)
+    # Combine layers
+    comb_layers = np.vstack(comb_layers)
+    # Transpose for PCA
+    comb_layers = comb_layers.transpose()
+    return comb_layers
+
+
+# io
+def batch_add_sparse(loom_file,
+                     layers,
+                     row_attrs,
+                     col_attrs,
+                     append=False,
+                     empty_base=False,
+                     batch_size=512,
+                     verbose=False):
+    """
+    Batch adds sparse matrices to a loom file
+
+    Args:
+        loom_file (str): Path to output loom file
+        layers (dict): Keys are names of layers, values are matrices to include
+            Matrices should be features by observations
+        row_attrs (dict): Attributes for rows in loom file
+        col_attrs (dict): Attributes for columns in loom file
+        append (bool): If true, append new cells. If false, overwrite file
+        empty_base (bool): If true, add an empty array to the base layer
+        batch_size (int): Size of batches of cells to add
+        verbose (bool): Print logging messages
+    """
+    # Check layers
+    if verbose:
+        t0 = time.time()
+        helper_log.info('Adding data to loom_file {}'.format(loom_file))
+    feats = set([])
+    obs = set([])
+    for key in layers:
+        if not sparse.issparse(layers[key]):
+            raise ValueError('Expects sparse matrix input')
+        feats.add(layers[key].shape[0])
+        obs.add(layers[key].shape[1])
+    if len(feats) != 1 or len(obs) != 1:
+        raise ValueError('Matrix dimension mismatch')
+    # Get size of batches
+    obs_size = list(obs)[0]
+    feat_size = list(feats)[0]
+    batches = np.array_split(np.arange(start=0,
+                                       stop=obs_size,
+                                       step=1),
+                             np.ceil(obs_size / batch_size))
+    for batch in batches:
+        batch_layer = dict()
+        if empty_base:
+            batch_layer[''] = np.zeros((feat_size, batch.shape[0]), dtype=int)
+        for key in layers:
+            batch_layer[key] = layers[key].tocsc()[:, batch].toarray()
+        batch_col = dict()
+        for key in col_attrs:
+            batch_col[key] = col_attrs[key][batch]
+        if append:
+            with loompy.connect(filename=loom_file) as ds:
+                ds.add_columns(layers=batch_layer,
+                               row_attrs=row_attrs,
+                               col_attrs=batch_col)
+        else:
+            loompy.create(filename=loom_file,
+                          layers=batch_layer,
+                          row_attrs=row_attrs,
+                          col_attrs=batch_col)
+            append = True
+    if verbose:
+        t1 = time.time()
+        time_run, time_fmt = general_utils.format_run_time(t0, t1)
+        helper_log.info(
+            'Wrote loom file in {0:.2f} {1}'.format(time_run, time_fmt))
+
+
+# Plots
 def get_random_colors(n):
     """
     Generates n random colors
@@ -292,7 +623,7 @@ def get_random_colors(n):
     if n > num_cols:
         repeat_number = np.floor(n / num_cols)
         old_colors = colors[:]
-        for _i in np.arange(start=0,stop=repeat_number):
+        for _i in np.arange(start=0, stop=repeat_number):
             colors = colors + old_colors
     return colors[:n]
 
@@ -325,14 +656,14 @@ def find_limits(df_plot,
                 axis):
     """
     Generates a tuple of limits for a given axis
-    
+
     Args:
         df_plot (dataframe): Contains x/y-coordiantes for scatter plot
         axis (str): Column in df_plot containing axis coordinates
-    
+
     Returns
         lims (tuple): Limits along given axis
-    
+
     Adapted from code by Fangming Xie
     """
     lims = [np.nanpercentile(df_plot[axis].values, 0.1),
@@ -390,7 +721,7 @@ def plot_scatter(df_plot,
                  **kwargs):
     """
     Plots scatter of cells in which each cluster is marked with a unique color
-    
+
     Args:
         df_plot (dataframe): Contains x/y-coordinates for scatter plot
         x_axis (str): Column in df_plot containing x-axis coordinates
@@ -415,7 +746,7 @@ def plot_scatter(df_plot,
         fig (object): Optional, plot figure if already generated
         ax (object): Optional, axis for plots if already generated
         **kwargs: keyword arguments for matplotlib's scatter
-    
+
     Adpated from code by Fangming Xie
     """
     if col_opt is None:
@@ -512,7 +843,7 @@ def plot_scatter(df_plot,
             fig.savefig(output,
                         bbox_extra_artists=(l_h,),
                         bbox_inches='tight')
-        ph_log.info('Saved figure to {}'.format(output))
+        helper_log.info('Saved figure to {}'.format(output))
     if close:
         plt.close()
 
@@ -522,15 +853,15 @@ def set_value_by_percentile(count,
                             high_p):
     """
     Sets a count below or above a percentile to the given percentile
-    
+
     Args:
         count (float): Count value
         low_p (float): Lowest percentile value
         high_p (float): Highest percentile value
-    
+
     Returns:
         normalized (float): Count normalized by percentile
-        
+
     Adapted from code written by Fangming Xie
     """
     if count < low_p:
@@ -546,15 +877,15 @@ def percentile_norm(counts,
                     high_p):
     """
     Sets the lowest/highest values for counts to be their percentiles
-    
+
     Args:
         counts (1D array): Array of count values
         low_p (int): Lowest percentile value allowed (0-100)
         high_p (int): Highest percentile value allowed (0-100)
-    
+
     Returns:
         normalized (1D array): Array of normalized count values
-    
+
     Adapted from code by Fangming Xie
     """
     low_p = np.nanpercentile(counts, low_p)
@@ -571,16 +902,16 @@ def gen_confusion_mat(row_vals,
                       diagonalize=False):
     """
     Generates a diagonalized confusion matrix
-    
+
     Args:
         row_vals (ndarray): Values for rows in confusion matrix
         col_vals (ndarray): Values for columns in confusion matrix
         normalize_by (str): Optional, normalize by rows or columns
         diagonalize (bool): Optional, set values along a diagonal
-    
+
     Returns:
         mat (ndarray): Confusion matrix with diagonalized data
-        
+
     Written by Fangming Xie with modifications by Wayne Doyle
     """
     # Cross-tabulate data
@@ -604,6 +935,7 @@ def gen_confusion_mat(row_vals,
         new_rows = orig_rows.copy()
         new_cols = orig_cols.copy()
         # Put largest values in corner
+        dm = 0
         for idx in range(min(diag_mat.shape)):
             tmp_mat = diag_mat[idx:, idx:]
             i, j = np.unravel_index(tmp_mat.argmax(),
@@ -756,7 +1088,7 @@ def plot_boxviolin(df_plot,
             fig.savefig(output,
                         bbox_extra_artists=(l_h,),
                         bbox_inches='tight')
-        ph_log.info('Saved figure to {}'.format(output))
+        helper_log.info('Saved figure to {}'.format(output))
     if close:
         plt.close()
     plt.show()
@@ -916,3 +1248,120 @@ def process_highlight(df_plot,
     else:
         highlight = False
     return df_plot, highlight
+
+
+# Smoothing
+# Code/ideas from https://github.com/KrishnaswamyLab/MAGIC
+def compute_markov(loom_file,
+                   neighbor_attr,
+                   distance_attr,
+                   out_graph,
+                   valid_ca=None,
+                   k=30,
+                   ka=4,
+                   epsilon=1,
+                   p=0.9,
+                   verbose=False):
+    """
+    Calculates Markov matrix for smoothing
+
+    Args:
+        loom_file (str): Path to loom file
+        neighbor_attr (str): Name of attribute containing kNN indices
+        distance_attr (str): Name of attribute containing kNN distances
+        out_graph (str): Name of output graph containing Markov matrix
+        valid_ca (str): Name of attribute specifying valid cells
+        k (int): Number of nearest neighbors
+        ka (int): Normalize by this distance neighbor
+        epsilon (int): Variance parameter
+        p (float): Contribution to smoothing from a cell's own self (0-1)
+        verbose (bool): If true, print logigng messages
+    """
+    if verbose:
+        t0 = time.time()
+        helper_log.info('Computing Markov matrix for smoothing')
+        param_msg = 'Parameters: k = {0}, ka = {1}, epsilon = {2}, p = {3}'
+        helper_log.info(param_msg.format(k, ka, epsilon, p))
+    valid_idx = loom_utils.get_attr_index(loom_file=loom_file,
+                                          attr=valid_ca,
+                                          columns=True,
+                                          as_bool=True,
+                                          inverse=False)
+    # Generate Markov in batches
+    with loompy.connect(loom_file) as ds:
+        tot_n = ds.shape[1]
+        distances = ds.ca[distance_attr][valid_idx]
+        indices = ds.ca[neighbor_attr][valid_idx]
+        # Remove self
+        if distances.shape[1] == k:
+            distances = distances[:, 1:]
+            indices = indices[:, 1:]
+        elif distances.shape[1] != k - 1:
+            err_msg = 'Size of kNN is unexpected'
+            if verbose:
+                helper_log.error(err_msg)
+            raise ValueError(err_msg)
+        # Normalize by ka's distance
+        if ka > 0:
+            distances = distances / (np.sort(distances,
+                                             axis=1)[:, ka].reshape(-1, 1))
+        # Calculate gaussian kernel
+        adjs = np.exp(-((distances ** 2) / (epsilon ** 2)))
+    # Construct W
+    rows = np.repeat(np.where(valid_idx), k - 1)  # k-1 to remove self
+    cols = np.ravel(indices)
+    vals = np.ravel(adjs)
+    w = sparse.csr_matrix((vals, (rows, cols)), shape=(tot_n, tot_n))
+    # Symmetrize W
+    w = w + w.T
+    # Normalize W
+    divisor = np.ravel(np.repeat(w.sum(axis=1), w.getnnz(axis=1)))
+    w.data /= divisor
+    # Include self
+    eye = sparse.identity(w.shape[0])
+    if p:
+        w = p * eye + (1 - p) * w
+    # Add to file
+    with loompy.connect(filename=loom_file) as ds:
+        ds.col_graphs[out_graph] = w
+    # Report if user wants
+    if verbose:
+        t1 = time.time()
+        time_run, time_fmt = general_utils.format_run_time(t0, t1)
+        helper_log.info(
+            'Generated Markov matrix in {0:.2f} {1}'.format(time_run,
+                                                            time_fmt))
+
+
+def perform_smoothing(loom_file,
+                      in_layer,
+                      out_layer,
+                      w_graph,
+                      verbose=False):
+    """
+    Performs actual act of smoothing on cells in a loom file
+
+    Args:
+        loom_file (str): Path to loom file
+        in_layer (str): Layer containing observed counts
+        out_layer (str): Name of output layer
+        w_graph (str): Name of col_graph containing markov matrix
+        verbose (bool): If true, prints logging messages
+    """
+    if verbose:
+        t0 = time.time()
+        helper_log.info('Performing smoothing')
+    with loompy.connect(filename=loom_file) as ds:
+        w = ds.col_graphs[w_graph].tocsr()
+        c = ds.layers[
+            in_layer].sparse().T.tocsr()  # Transpose so smoothing on cells
+        s = w.dot(c).T
+        del w
+        del c
+        gc.collect()
+        s = s.tocsr()
+        ds.layers[out_layer] = s
+    if verbose:
+        t1 = time.time()
+        time_run, time_fmt = general_utils.format_run_time(t0, t1)
+        helper_log.info('Smoothed in {0:.2f} {1}'.format(time_run, time_fmt))

@@ -1,331 +1,121 @@
 """
 Collection of recipes used for basic analyses of sequencing data
+These functions all assume that the loom file has already been generated
+If you need help making a loom file see the io module
 
 Written by Wayne Doyle unless noted
 
 (C) 2019 Mukamel Lab GPLv2
 """
 
-import loompy
-from . import recipes_helpers
-from . import smooth
-from . import cemba
+from . import qc
+from . import snmcseq
+from . import clustering
 
-def process_10x(loom_file,
-                count_layer = 'counts',
-                id_attr = 'CellID',
-                min_feature_count = 1,
-                feature_fraction = 0.01,
-                min_cell_count = 1,
-                cell_fraction = 0.01,
-                n_pca=50,
-                cluster_k = 30,
-                drop_first_pc = False,
-                tsne_perp = 30,
-                umap_dist=0.1,
-                umap_k=15,
-                ka = 4,
-                epsilon = 1,
-                p = 0.9,
-                seed = 23,
-                n_proc = 5,
-                batch_size = 3000,
-                verbose = True):
+
+def process_snmcseq(loom_file,
+                    cell_high=None,
+                    cell_low=None,
+                    feat_min=20,
+                    feat_frac=0.8,
+                    context='CH',
+                    reduce_method='umap',
+                    cluster_algorithm='leiden',
+                    n_proc=1,
+                    batch_size=5000,
+                    seed=None,
+                    verbose=False):
+    """
+    Performs a basic analysis of snmC-seq data
+
+    As a basic recipe this function has a number of assumptions:
+        1) Cytosine coverage calls are stored in layer 'C_{}'.format(context)
+        2) Methylated cytosine calls are stored in layer 'mC_{}'.format(context)
+        3) If scaling, there is a column attribute called 'm{}'.format(context)
+
+    Args:
+        loom_file (str): Path to loom file
+        cell_high (dict): Dictionary of column attributes and maximum values
+            Restricts cells to have attribute (key) less than value
+        cell_low (dict): Dictionary of column attributes and mininum values
+            Restricts cells to have attribute (key) more than value
+        feat_min (int): Minimum number of covered cytosines for a feature
+        feat_frac (float): Fraction of cells with at least feat_min
+            Only features with feat_min in feat_frac will pass QC
+        context (str): Methylation context for analysis
+            There should be layers that end with this string (i.e. mC_CH)
+        reduce_method (str): Method for performing dimensionality reduction
+            umap
+            tsne
+        cluster_algorithm (str): Method for determining clusters
+            louvain
+            leiden
+        n_proc (int): Number of processors to use
+        batch_size (int): Size of chunks
+            Larger chunks speed up code but use more memory
+        seed (int): Set seed for random processes
+        verbose (bool): Print logging messages
+    """
     # Set defaults
     valid_ca = 'Valid_QC'
     valid_ra = 'Valid_QC'
-    observed_norm_layer='normalized_observed'
-    observed_log_layer='normalized_log10_observed'
-    observed_size_attr = 'library_size_observed'
-    observed_pca = 'PCA_n{}_observed'.format(n_pca)
-    observed_pca_valid = 'Valid_{}'.format(observed_pca)
-    observed_jaccard = 'Jaccard_n{}_k{}_observed'.format(n_pca,cluster_k)
-    observed_cluster = 'ClusterID_n{}_k{}_observed'.format(n_pca,cluster_k)
-    observed_neighbor = 'neighbors_n{}_k{}_observed'.format(n_pca,cluster_k)
-    observed_distance = 'distances_n{}_k{}_observed'.format(n_pca,cluster_k)
-    observed_umap = 'umap_n{}_observed'.format(n_pca)
-    observed_tsne='tsne_n{}_observed'.format(n_pca)
-    smoothed_count = 'counts_smoothed'
-    smoothed_norm_layer='normalized_smoothed'
-    smoothed_log_layer = 'normalized_log10_smoothed'
-    smoothed_size_attr = 'library_size_observed'
-    smoothed_pca = 'PCA_n{}_smoothed'.format(n_pca)
-    smoothed_pca_valid = 'Valid_{}'.format(smoothed_pca)
-    smoothed_jaccard = 'Jaccard_n{}_k{}_smoothed'.format(n_pca,cluster_k)
-    smoothed_cluster = 'ClusterID_n{}_k{}_smoothed'.format(n_pca,cluster_k)
-    smoothed_neighbor = 'neighbors_n{}_k{}_smoothed'.format(n_pca,cluster_k)
-    smoothed_distance = 'distances_n{}_k{}_smoothed'.format(n_pca,cluster_k)
-    smoothed_umap = 'umap_n{}_smoothed'.format(n_pca)
-    smoothed_tsne = 'tsne_n{}_smoothed'.format(n_pca)
-    # Perform initial QC for normalization
-    recipes_helpers.qc_cells_and_features(loom_file=loom_file,
-                                         layer=count_layer,
-                                         valid_ca='Valid_baseline',
-                                         valid_ra='Valid_baseline',
-                                         min_feature_count=1,
-                                         feature_fraction=None,
-                                         min_cell_count=1,
-                                         cell_fraction = None,
-                                         batch_size=batch_size,
-                                         verbose=verbose)
-    # Normalize counts
-    recipes_helpers.normalize_and_log_10x(loom_file=loom_file,
-                                         in_layer=count_layer,
-                                         norm_layer=observed_norm_layer,
-                                         log_layer=observed_log_layer,
-                                         size_attr=observed_size_attr,
-                                         valid_ca='Valid_baseline',
-                                         valid_ra='Valid_baseline',
-                                         batch_size=batch_size,
-                                         verbose=verbose)
-    # Perform QC for subsequent steps
-    recipes_helpers.qc_cells_and_features(loom_file=loom_file,
-                                         layer=count_layer,
-                                         valid_ca=valid_ca,
-                                         valid_ra=valid_ra,
-                                         min_feature_count=min_feature_count,
-                                         feature_fraction=feature_fraction,
-                                         min_cell_count=min_cell_count,
-                                         cell_fraction = cell_fraction,
-                                         batch_size=batch_size,
-                                         verbose=verbose)
-    # Cluster observed data
-    recipes_helpers.louvain_tsne_umap(loom_file=loom_file,
-                                     clust_attr=observed_cluster,
-                                     id_attr='CellID',
-                                     valid_ca=valid_ca,
-                                     valid_ra=valid_ra,
-                                     pca_attr=observed_pca,
-                                     pca_layer=observed_log_layer,
-                                     n_pca=n_pca,
-                                     drop_first=drop_first_pc,
-                                     scale_attr=None,
-                                     neighbor_attr=observed_neighbor,
-                                     distance_attr=observed_distance,
-                                     cluster_k=cluster_k,
-                                     jaccard_graph=observed_jaccard,
-                                     umap_attr = observed_umap,
-                                     umap_dist=umap_dist,
-                                     umap_k=umap_k,
-                                     tsne_attr = observed_tsne,
-                                     tsne_perp = tsne_perp,
-                                     n_proc = n_proc,
-                                     batch_size=batch_size,
-                                     seed=seed,
-                                     verbose=verbose)
-    # Smooth data
-    smooth.smooth_counts(loom_file = loom_file,
-                             valid_ca = valid_ca,
-                             gen_pca = False,
-                             pca_attr = observed_pca,
-                             n_pca = n_pca,
-                             gen_knn = False,
-                             neighbor_attr = observed_neighbor,
-                             distance_attr = observed_distance,
-                             k = cluster_k,
-                             num_trees = 50,
-                             metric = 'euclidean',
-                             gen_w = True,
-                             w_graph = 'W_smoothed',
-                             observed_layer = count_layer,
-                             smoothed_layer = smoothed_count,
-                             ka = ka,
-                             epsilon = epsilon,
-                             p = p,
-                             batch_size = batch_size,
-                             verbose = verbose)
-    recipes_helpers.normalize_and_log_10x(loom_file=loom_file,
-                                         in_layer=smoothed_count,
-                                         norm_layer=smoothed_norm_layer,
-                                         log_layer=smoothed_log_layer,
-                                         size_attr=smoothed_size_attr,
-                                         valid_ca=valid_ca,
-                                         valid_ra=valid_ra,
-                                         batch_size=batch_size,
-                                         verbose=verbose)
-     # Cluster smoothed data
-    recipes_helpers.louvain_tsne_umap(loom_file=loom_file,
-                      clust_attr=smoothed_cluster,
-                      id_attr='CellID',
-                      valid_ca=valid_ca,
-                      valid_ra=valid_ra,
-                      pca_attr=smoothed_pca,
-                      pca_layer=smoothed_log_layer,
-                      n_pca=n_pca,
-                      drop_first=drop_first_pc,
-                      scale_attr=None,
-                      neighbor_attr=smoothed_neighbor,
-                      distance_attr=smoothed_distance,
-                      cluster_k=cluster_k,
-                      jaccard_graph=smoothed_jaccard,
-                      umap_attr = smoothed_umap,
-                      umap_dist=umap_dist,
-                      umap_k=umap_k,
-                      tsne_attr = smoothed_tsne,
-                      tsne_perp = tsne_perp,
-                      n_proc = n_proc,
-                      batch_size=batch_size,
-                      seed=seed,
-                      verbose=verbose)
-
-def process_atac_gene(loom_file,
-                      base_dir,
-                      samples,
-                      count_layer = 'counts',
-                      id_attr = 'CellID',
-                      length_attr='Length',
-                      uniq_num = 1000,
-                      uniq_rate = 0.5,
-                      chrM_rate = 0.1,
-                      spectrum = 3,
-                      min_feature_count = 1,
-                      feature_fraction = 0.01,
-                      min_cell_count = 1,
-                      cell_fraction = 0.01,
-                      n_pca=50,
-                      cluster_k = 30,
-                      drop_first_pc = False,
-                      tsne_perp = 30,
-                      umap_dist=0.1,
-                      umap_k=15,
-                      ka = 4,
-                      epsilon = 1,
-                      p = 0.9,
-                      seed = 23,
-                      n_proc = 5,
-                      batch_size = 3000,
-                      verbose = True):
-    # Set defaults
-    valid_ca = 'Valid_QC'
-    valid_ra = 'Valid_QC'
-    observed_norm_layer='tpm_observed'
-    observed_log_layer='tpm_log10_observed'
-    observed_pca = 'PCA_n{}_observed'.format(n_pca)
-    observed_pca_valid = 'Valid_{}'.format(observed_pca)
-    observed_jaccard = 'Jaccard_n{}_k{}_observed'.format(n_pca,cluster_k)
-    observed_cluster = 'ClusterID_n{}_k{}_observed'.format(n_pca,cluster_k)
-    observed_neighbor = 'neighbors_n{}_k{}_observed'.format(n_pca,cluster_k)
-    observed_distance = 'distances_n{}_k{}_observed'.format(n_pca,cluster_k)
-    observed_umap = 'umap_n{}_observed'.format(n_pca)
-    observed_tsne='tsne_n{}_observed'.format(n_pca)
-    smoothed_count = 'counts_smoothed'
-    smoothed_norm_layer='tpm_smoothed'
-    smoothed_log_layer = 'tpm_log10_smoothed'
-    smoothed_pca = 'PCA_n{}_smoothed'.format(n_pca)
-    smoothed_pca_valid = 'Valid_{}'.format(smoothed_pca)
-    smoothed_jaccard = 'Jaccard_n{}_k{}_smoothed'.format(n_pca,cluster_k)
-    smoothed_cluster = 'ClusterID_n{}_k{}_smoothed'.format(n_pca,cluster_k)
-    smoothed_neighbor = 'neighbors_n{}_k{}_smoothed'.format(n_pca,cluster_k)
-    smoothed_distance = 'distances_n{}_k{}_smoothed'.format(n_pca,cluster_k)
-    smoothed_umap = 'umap_n{}_smoothed'.format(n_pca)
-    smoothed_tsne = 'tsne_n{}_smoothed'.format(n_pca)
-    # Normalize counts
-    recipes_helpers.normalize_and_log_atac_gene(loom_file=loom_file,
-                                               in_layer=count_layer,
-                                               norm_layer=observed_norm_layer,
-                                               log_layer=observed_log_layer,
-                                               length_attr=length_attr,
-                                               method='tpm',
-                                               valid_ca=None,
-                                               valid_ra=None,
-                                               batch_size=batch_size,
-                                               verbose=verbose)
-    
-    # Perform QC 
-    cemba.add_atac_qc(loom_file = loom_file, 
-                      base_dir = base_dir, 
-                      samples = samples,
-                      layer = count_layer,
-                      uniq_num = uniq_num,
-                      uniq_rate = uniq_rate,
-                      chrM_rate = chrM_rate,
-                      spectrum = spectrum,
-                      feat_min = min_feature_count,
-                      feat_cov = feature_fraction,
-                      cell_min= min_cell_count,
-                      cell_cov = cell_fraction,
-                      batch_size = batch_size,
-                      verbose = verbose)
-    # Cluster observed data
-    recipes_helpers.louvain_tsne_umap(loom_file=loom_file,
-                                     clust_attr=observed_cluster,
-                                     id_attr='CellID',
-                                     valid_ca=valid_ca,
-                                     valid_ra=valid_ra,
-                                     pca_attr=observed_pca,
-                                     pca_layer=observed_log_layer,
-                                     n_pca=n_pca,
-                                     drop_first=drop_first_pc,
-                                     scale_attr=None,
-                                     neighbor_attr=observed_neighbor,
-                                     distance_attr=observed_distance,
-                                     cluster_k=cluster_k,
-                                     jaccard_graph=observed_jaccard,
-                                     umap_attr = observed_umap,
-                                     umap_dist=umap_dist,
-                                     umap_k=umap_k,
-                                     tsne_attr = observed_tsne,
-                                     tsne_perp = tsne_perp,
-                                     n_proc = n_proc,
-                                     batch_size=batch_size,
-                                     seed=seed,
-                                     verbose=verbose)
-    # Smooth data
-    smooth.smooth_counts(loom_file = loom_file,
-                             valid_ca = valid_ca,
-                             gen_pca = False,
-                             pca_attr = observed_pca,
-                             n_pca = n_pca,
-                             gen_knn = False,
-                             neighbor_attr = observed_neighbor,
-                             distance_attr = observed_distance,
-                             k = cluster_k,
-                             num_trees = 50,
-                             metric = 'euclidean',
-                             gen_w = True,
-                             w_graph = 'W_smoothed',
-                             observed_layer = count_layer,
-                             smoothed_layer = smoothed_count,
-                             ka = ka,
-                             epsilon = epsilon,
-                             p = p,
-                             batch_size = batch_size,
-                             verbose = verbose)
-    # Normalize data
-    recipes_helpers.normalize_and_log_atac_gene(loom_file=loom_file,
-                                               in_layer=smoothed_count,
-                                               norm_layer=smoothed_norm_layer,
-                                               log_layer=smoothed_log_layer,
-                                               length_attr=length_attr,
-                                               method='tpm',
-                                               valid_ca=valid_ca,
-                                               valid_ra=valid_ra,
-                                               batch_size=batch_size,
-                                               verbose=verbose)
-     # Cluster smoothed data
-    recipes_helpers.louvain_tsne_umap(loom_file=loom_file,
-                      clust_attr=smoothed_cluster,
-                      id_attr='CellID',
-                      valid_ca=valid_ca,
-                      valid_ra=valid_ra,
-                      pca_attr=smoothed_pca,
-                      pca_layer=smoothed_log_layer,
-                      n_pca=n_pca,
-                      drop_first=drop_first_pc,
-                      scale_attr=None,
-                      neighbor_attr=smoothed_neighbor,
-                      distance_attr=smoothed_distance,
-                      cluster_k=cluster_k,
-                      jaccard_graph=smoothed_jaccard,
-                      umap_attr = smoothed_umap,
-                      umap_dist=umap_dist,
-                      umap_k=umap_k,
-                      tsne_attr = smoothed_tsne,
-                      tsne_perp = tsne_perp,
-                      n_proc = n_proc,
-                      batch_size=batch_size,
-                      seed=seed,
-                      verbose=verbose)
-
-    
-
+    # Perform quality control
+    qc.label_cells_by_attrs(loom_file,
+                            out_attr=valid_ca,
+                            high_values=cell_high,
+                            low_values=cell_low,
+                            verbose=verbose)
+    qc.label_covered_features(loom_file=loom_file,
+                              layer='C_{}'.format(context),
+                              out_attr=valid_ra,
+                              min_count=feat_min,
+                              fraction_covered=feat_frac,
+                              valid_ca=valid_ca,
+                              valid_ra=None,
+                              batch_size=batch_size,
+                              verbose=verbose)
+    # Calculate mC/C
+    snmcseq.calculate_mcc(loom_file=loom_file,
+                          mc_layer='mC_{}'.format(context),
+                          c_layer='C_{}'.format(context),
+                          out_layer='mCC_{}'.format(context),
+                          mean_impute=True,
+                          valid_ra='Valid_QC_{}'.format(context),
+                          valid_ca=valid_ca,
+                          batch_size=batch_size,
+                          verbose=verbose)
+    # Cluster and reduce data
+    clustering.cluster_and_reduce(loom_file=loom_file,
+                                  reduce_method=reduce_method,
+                                  clust_attr='ClusterID',
+                                  reduce_attr=reduce_method,
+                                  n_reduce=2,
+                                  cell_attr='CellID',
+                                  cluster_algorithm=cluster_algorithm,
+                                  resolution=1.0,
+                                  leiden_iter=2,
+                                  num_starts=None,
+                                  gen_pca=True,
+                                  pca_attr='PCA',
+                                  layer='',
+                                  n_pca=50,
+                                  scale_attr=None,
+                                  gen_knn=True,
+                                  neighbor_attr='knn_indices',
+                                  distance_attr='knn_distances',
+                                  k=30,
+                                  num_trees=50,
+                                  knn_metric='euclidean',
+                                  gen_jaccard=True,
+                                  jaccard_graph='jaccard_graph',
+                                  tsne_perp=30,
+                                  tsne_iter=1000,
+                                  umap_dist=0.1,
+                                  umap_neighbors=15,
+                                  umap_metric='euclidean',
+                                  valid_ca=valid_ca,
+                                  valid_ra=valid_ra,
+                                  n_proc=n_proc,
+                                  batch_size=batch_size,
+                                  seed=seed,
+                                  verbose=verbose)

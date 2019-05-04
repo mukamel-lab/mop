@@ -16,7 +16,7 @@ import seaborn as sns
 from collections import defaultdict
 from . import general_utils
 from . import loom_utils
-from . import plot_helpers as ph
+from . import helpers
 
 # Start log
 plot_log = logging.getLogger(__name__)
@@ -99,18 +99,19 @@ def scatter_cell(loom_file,
              'y_val': ds.ca[y_axis][col_idx].astype(float)})
         if color_attr is None:
             if as_heatmap:
-                df_plot['color'] = ph.percentile_norm(
+                df_plot['color'] = helpers.percentile_norm(
                     counts=df_plot[plot_attr],
                     low_p=low_p,
                     high_p=high_p)
             else:
-                df_plot = ph.get_category_colors(df_plot=df_plot,
-                                                 category_label=plot_attr,
-                                                 color_label='color')
+                df_plot = helpers.get_category_colors(df_plot=df_plot,
+                                                      category_label=plot_attr,
+                                                      color_label='color')
         else:
             df_plot['color'] = ds.ca[color_attr][col_idx]
         if shuffle:
-            df_plot = df_plot.sample(frac=1,axis='index').reset_index(drop=True)
+            df_plot = df_plot.sample(frac=1, axis='index').reset_index(
+                drop=True)
         if downsample_attr is not None:
             df_plot[downsample_attr] = ds.ca[downsample_attr][col_idx]
     # Handle downsampling
@@ -150,30 +151,30 @@ def scatter_cell(loom_file,
     else:
         highlight = False
     # Set-up plot
-    fig, ax = ph.initialize_plot(fig=fig,
-                                 ax=ax,
-                                 figsize=figsize)
+    fig, ax = helpers.initialize_plot(fig=fig,
+                                      ax=ax,
+                                      figsize=figsize)
     # Make figure
-    ph.plot_scatter(df_plot=df_plot,
-                    x_axis='x_val',
-                    y_axis='y_val',
-                    col_opt='color',
-                    s=s,
-                    legend=legend,
-                    legend_labels=plot_attr,
-                    highlight=highlight,
-                    output=output,
-                    xlim=xlim,
-                    ylim=ylim,
-                    cbar_label=cbar_label,
-                    x_label=x_label,
-                    y_label=y_label,
-                    title=title,
-                    figsize=figsize,
-                    close=close,
-                    fig=fig,
-                    ax=ax,
-                    **kwargs)
+    helpers.plot_scatter(df_plot=df_plot,
+                         x_axis='x_val',
+                         y_axis='y_val',
+                         col_opt='color',
+                         s=s,
+                         legend=legend,
+                         legend_labels=plot_attr,
+                         highlight=highlight,
+                         output=output,
+                         xlim=xlim,
+                         ylim=ylim,
+                         cbar_label=cbar_label,
+                         x_label=x_label,
+                         y_label=y_label,
+                         title=title,
+                         figsize=figsize,
+                         close=close,
+                         fig=fig,
+                         ax=ax,
+                         **kwargs)
 
 
 def scatter_feature(loom_file,
@@ -283,12 +284,12 @@ def scatter_feature(loom_file,
         else:
             add_gray = False
     # Add colors
-    df_plot['color'] = ph.percentile_norm(counts=counts,
-                                          low_p=low_p,
-                                          high_p=high_p)
+    df_plot['color'] = helpers.percentile_norm(counts=counts,
+                                               low_p=low_p,
+                                               high_p=high_p)
     # Shuffle
     if shuffle:
-        df_plot = df_plot.sample(frac=1,axis='index').reset_index(drop=True)
+        df_plot = df_plot.sample(frac=1, axis='index').reset_index(drop=True)
     # Downsample
     if downsample is not None:
         if isinstance(downsample, int):
@@ -318,61 +319,61 @@ def scatter_feature(loom_file,
         hl_idx = hl_idx.loc[highlight]
         df_plot = df_plot.iloc[hl_idx['idx'].values]
     # Set-up plot
-    fig, ax = ph.initialize_plot(fig=fig,
-                                 ax=ax,
-                                 figsize=figsize)
+    fig, ax = helpers.initialize_plot(fig=fig,
+                                      ax=ax,
+                                      figsize=figsize)
     # Make figure
     if add_gray:
         df_noncov = df_plot.copy()
         df_noncov['color'] = np.repeat('lightgray', df_noncov.shape[0])
-        ph.plot_scatter(df_plot=df_noncov,
-                        x_axis='x_val',
-                        y_axis='y_val',
-                        col_opt='color',
-                        s=s,
-                        fig=fig,
-                        ax=ax,
-                        **kwargs)
+        helpers.plot_scatter(df_plot=df_noncov,
+                             x_axis='x_val',
+                             y_axis='y_val',
+                             col_opt='color',
+                             s=s,
+                             fig=fig,
+                             ax=ax,
+                             **kwargs)
         if np.sum(cov_idx) > 0:
-            ph.plot_scatter(df_plot=df_plot.loc[cov_idx],
-                            x_axis='x_val',
-                            y_axis='y_val',
-                            col_opt='color',
-                            s=s,
-                            legend=legend,
-                            legend_labels=clust_attr,
-                            output=output,
-                            xlim=ax.get_xlim(),
-                            ylim=ax.get_ylim(),
-                            x_label=x_label,
-                            y_label=y_label,
-                            title=title,
-                            figsize=figsize,
-                            cbar_label=cbar_label,
-                            close=close,
-                            fig=fig,
-                            ax=ax,
-                            **kwargs)
+            helpers.plot_scatter(df_plot=df_plot.loc[cov_idx],
+                                 x_axis='x_val',
+                                 y_axis='y_val',
+                                 col_opt='color',
+                                 s=s,
+                                 legend=legend,
+                                 legend_labels=clust_attr,
+                                 output=output,
+                                 xlim=ax.get_xlim(),
+                                 ylim=ax.get_ylim(),
+                                 x_label=x_label,
+                                 y_label=y_label,
+                                 title=title,
+                                 figsize=figsize,
+                                 cbar_label=cbar_label,
+                                 close=close,
+                                 fig=fig,
+                                 ax=ax,
+                                 **kwargs)
     else:
-        ph.plot_scatter(df_plot=df_plot,
-                        x_axis='x_val',
-                        y_axis='y_val',
-                        col_opt='color',
-                        s=s,
-                        legend=legend,
-                        legend_labels=clust_attr,
-                        output=output,
-                        xlim=xlim,
-                        ylim=ylim,
-                        x_label=x_label,
-                        y_label=y_label,
-                        title=title,
-                        figsize=figsize,
-                        cbar_label=cbar_label,
-                        close=close,
-                        fig=fig,
-                        ax=ax,
-                        **kwargs)
+        helpers.plot_scatter(df_plot=df_plot,
+                             x_axis='x_val',
+                             y_axis='y_val',
+                             col_opt='color',
+                             s=s,
+                             legend=legend,
+                             legend_labels=clust_attr,
+                             output=output,
+                             xlim=xlim,
+                             ylim=ylim,
+                             x_label=x_label,
+                             y_label=y_label,
+                             title=title,
+                             figsize=figsize,
+                             cbar_label=cbar_label,
+                             close=close,
+                             fig=fig,
+                             ax=ax,
+                             **kwargs)
 
 
 def sankey(loom_file,
@@ -489,7 +490,7 @@ def sankey(loom_file,
     # Make color labels
     if left_color is None:
         left_col = pd.DataFrame(
-            {'color': ph.get_random_colors(len(l_labels))},
+            {'color': helpers.get_random_colors(len(l_labels))},
             index=l_labels[::-1])
     else:
         with loompy.connect(loom_file) as ds:
@@ -499,7 +500,7 @@ def sankey(loom_file,
             left_col = left_col.loc[l_labels[::-1]]
     if right_color is None:
         right_col = pd.DataFrame(
-            {'color': ph.get_random_colors(len(r_labels))},
+            {'color': helpers.get_random_colors(len(r_labels))},
             index=r_labels[::-1])
     else:
         with loompy.connect(loom_file) as ds:
@@ -516,9 +517,9 @@ def sankey(loom_file,
             line_col = line_col[~line_col.index.duplicated(keep='first')]
             line_col = line_col.loc[l_labels[::-1]]
     # Make plot
-    fig, ax = ph.initialize_plot(fig=fig,
-                                 ax=ax,
-                                 figsize=figsize)
+    fig, ax = helpers.initialize_plot(fig=fig,
+                                      ax=ax,
+                                      figsize=figsize)
     for l_label in l_labels:
         bottom_pos = left_width[l_label]['bottom']
         left_pos = left_width[l_label]['left']
@@ -644,14 +645,14 @@ def confusion_matrix(loom_file,
     with loompy.connect(loom_file) as ds:
         row_vals = ds.ca[row_attr][valid_idx]
         col_vals = ds.ca[column_attr][valid_idx]
-    confusion = ph.gen_confusion_mat(row_vals=row_vals,
-                                     col_vals=col_vals,
-                                     normalize_by=normalize_by,
-                                     diagonalize=diagonalize)
+    confusion = helpers.gen_confusion_mat(row_vals=row_vals,
+                                          col_vals=col_vals,
+                                          normalize_by=normalize_by,
+                                          diagonalize=diagonalize)
     # Set-up plot
-    fig, ax = ph.initialize_plot(fig=fig,
-                                 ax=ax,
-                                 figsize=figsize)
+    fig, ax = helpers.initialize_plot(fig=fig,
+                                      ax=ax,
+                                      figsize=figsize)
     # Make plot
     im = ax.imshow(confusion.values,
                    cmap=cmap)
@@ -728,33 +729,33 @@ def boxplot_feature(loom_file,
 
     """
     # Get categorical dataframe
-    df_plot = ph.prep_feature_dist(loom_file=loom_file,
-                                   category_attr=category_attr,
-                                   feat_id=feat_id,
-                                   layer=layer,
-                                   feat_attr=feat_attr,
-                                   scale_attr=scale_attr,
-                                   color_attr=color_attr,
-                                   valid_ca=valid_ca,
-                                   highlight=highlight)
+    df_plot = helpers.prep_feature_dist(loom_file=loom_file,
+                                        category_attr=category_attr,
+                                        feat_id=feat_id,
+                                        layer=layer,
+                                        feat_attr=feat_attr,
+                                        scale_attr=scale_attr,
+                                        color_attr=color_attr,
+                                        valid_ca=valid_ca,
+                                        highlight=highlight)
     if color_attr is None:
         color_attr = 'color'
     # Plot data
-    ph.plot_boxviolin(df_plot=df_plot,
-                      category_label=category_attr,
-                      value_label=layer,
-                      color_label=color_attr,
-                      plot_type='box',
-                      cat_order=highlight,
-                      title=title,
-                      x_label=x_label,
-                      y_label=y_label,
-                      legend=legend,
-                      output=output,
-                      figsize=figsize,
-                      close=close,
-                      fig=fig,
-                      ax=ax)
+    helpers.plot_boxviolin(df_plot=df_plot,
+                           category_label=category_attr,
+                           value_label=layer,
+                           color_label=color_attr,
+                           plot_type='box',
+                           cat_order=highlight,
+                           title=title,
+                           x_label=x_label,
+                           y_label=y_label,
+                           legend=legend,
+                           output=output,
+                           figsize=figsize,
+                           close=close,
+                           fig=fig,
+                           ax=ax)
 
 
 def violinplot_feature(loom_file,
@@ -801,33 +802,33 @@ def violinplot_feature(loom_file,
 
     """
     # Get categorical dataframe
-    df_plot = ph.prep_feature_dist(loom_file=loom_file,
-                                   category_attr=category_attr,
-                                   feat_id=feat_id,
-                                   layer=layer,
-                                   feat_attr=feat_attr,
-                                   scale_attr=scale_attr,
-                                   color_attr=color_attr,
-                                   valid_ca=valid_ca,
-                                   highlight=highlight)
+    df_plot = helpers.prep_feature_dist(loom_file=loom_file,
+                                        category_attr=category_attr,
+                                        feat_id=feat_id,
+                                        layer=layer,
+                                        feat_attr=feat_attr,
+                                        scale_attr=scale_attr,
+                                        color_attr=color_attr,
+                                        valid_ca=valid_ca,
+                                        highlight=highlight)
     if color_attr is None:
         color_attr = 'color'
     # Plot data
-    ph.plot_boxviolin(df_plot=df_plot,
-                      category_label=category_attr,
-                      value_label=layer,
-                      color_label=color_attr,
-                      plot_type='violin',
-                      cat_order=highlight,
-                      title=title,
-                      x_label=x_label,
-                      y_label=y_label,
-                      legend=legend,
-                      output=output,
-                      figsize=figsize,
-                      close=close,
-                      fig=fig,
-                      ax=ax)
+    helpers.plot_boxviolin(df_plot=df_plot,
+                           category_label=category_attr,
+                           value_label=layer,
+                           color_label=color_attr,
+                           plot_type='violin',
+                           cat_order=highlight,
+                           title=title,
+                           x_label=x_label,
+                           y_label=y_label,
+                           legend=legend,
+                           output=output,
+                           figsize=figsize,
+                           close=close,
+                           fig=fig,
+                           ax=ax)
 
 
 def boxplot_cell(loom_file,
@@ -867,30 +868,30 @@ def boxplot_cell(loom_file,
 
     """
     # Get categorical dataframe
-    df_plot = ph.prep_categorical_dist(loom_file=loom_file,
-                                       category_attr=category_attr,
-                                       value_attr=value_attr,
-                                       color_attr=color_attr,
-                                       valid_ca=valid_ca,
-                                       highlight=highlight)
+    df_plot = helpers.prep_categorical_dist(loom_file=loom_file,
+                                            category_attr=category_attr,
+                                            value_attr=value_attr,
+                                            color_attr=color_attr,
+                                            valid_ca=valid_ca,
+                                            highlight=highlight)
     if color_attr is None:
         color_attr = 'color'
     # Plot data
-    ph.plot_boxviolin(df_plot=df_plot,
-                      category_label=category_attr,
-                      value_label=value_attr,
-                      color_label=color_attr,
-                      plot_type='box',
-                      cat_order=highlight,
-                      title=title,
-                      x_label=x_label,
-                      y_label=y_label,
-                      legend=legend,
-                      output=output,
-                      figsize=figsize,
-                      close=close,
-                      fig=fig,
-                      ax=ax)
+    helpers.plot_boxviolin(df_plot=df_plot,
+                           category_label=category_attr,
+                           value_label=value_attr,
+                           color_label=color_attr,
+                           plot_type='box',
+                           cat_order=highlight,
+                           title=title,
+                           x_label=x_label,
+                           y_label=y_label,
+                           legend=legend,
+                           output=output,
+                           figsize=figsize,
+                           close=close,
+                           fig=fig,
+                           ax=ax)
 
 
 def violinplot_cell(loom_file,
@@ -930,30 +931,30 @@ def violinplot_cell(loom_file,
 
     """
     # Get categorical dataframe
-    df_plot = ph.prep_categorical_dist(loom_file=loom_file,
-                                       category_attr=category_attr,
-                                       value_attr=value_attr,
-                                       color_attr=color_attr,
-                                       valid_ca=valid_ca,
-                                       highlight=highlight)
+    df_plot = helpers.prep_categorical_dist(loom_file=loom_file,
+                                            category_attr=category_attr,
+                                            value_attr=value_attr,
+                                            color_attr=color_attr,
+                                            valid_ca=valid_ca,
+                                            highlight=highlight)
     if color_attr is None:
         color_attr = 'color'
     # Plot data
-    ph.plot_boxviolin(df_plot=df_plot,
-                      category_label=category_attr,
-                      value_label=value_attr,
-                      color_label=color_attr,
-                      plot_type='violin',
-                      cat_order=highlight,
-                      title=title,
-                      x_label=x_label,
-                      y_label=y_label,
-                      legend=legend,
-                      output=output,
-                      figsize=figsize,
-                      close=close,
-                      fig=fig,
-                      ax=ax)
+    helpers.plot_boxviolin(df_plot=df_plot,
+                           category_label=category_attr,
+                           value_label=value_attr,
+                           color_label=color_attr,
+                           plot_type='violin',
+                           cat_order=highlight,
+                           title=title,
+                           x_label=x_label,
+                           y_label=y_label,
+                           legend=legend,
+                           output=output,
+                           figsize=figsize,
+                           close=close,
+                           fig=fig,
+                           ax=ax)
 
 
 def barplot_cell(loom_file,
@@ -1003,15 +1004,15 @@ def barplot_cell(loom_file,
         df_plot = pd.DataFrame({category_attr: ds.ca[category_attr][col_idx],
                                 value_attr: ds.ca[value_attr][col_idx]})
         if color_attr is None:
-            df_plot = ph.get_category_colors(df_plot=df_plot,
-                                             category_label=value_attr,
-                                             color_label='color')
+            df_plot = helpers.get_category_colors(df_plot=df_plot,
+                                                  category_label=value_attr,
+                                                  color_label='color')
         else:
             df_plot['color'] = ds.ca[color_attr][col_idx]
     # Handle highlighting
-    df_plot, is_high = ph.process_highlight(df_plot=df_plot,
-                                            highlight_attr=category_attr,
-                                            highlight_values=highlight)
+    df_plot, is_high = helpers.process_highlight(df_plot=df_plot,
+                                                 highlight_attr=category_attr,
+                                                 highlight_values=highlight)
     if is_high:
         df_plot = df_plot.loc[
             df_plot.index[df_plot[category_attr].isin(highlight)]]
@@ -1023,9 +1024,9 @@ def barplot_cell(loom_file,
     color_df = df_plot[[value_attr, 'color']].drop_duplicates(keep='first')
     color_df = color_df.set_index([value_attr], drop=True)
     # Make plot
-    fig, ax = ph.initialize_plot(fig=fig,
-                                 ax=ax,
-                                 figsize=figsize)
+    fig, ax = helpers.initialize_plot(fig=fig,
+                                      ax=ax,
+                                      figsize=figsize)
     bottom_value = 0
     objs = []
     for value in color_df.index.values:
