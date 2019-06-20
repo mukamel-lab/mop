@@ -18,6 +18,7 @@ Requirements
 * annoy
 * MulticoreTSNE
 * louvain
+* leidenalg
 * python-igraph
 
 Installation
